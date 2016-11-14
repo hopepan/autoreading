@@ -53,11 +53,11 @@ public class ArticleListActivity extends AppCompatActivity {
             }
         });
 
-        View recyclerView = findViewById(R.id.ariticle_list);
+        View recyclerView = findViewById(R.id.article_list);
         assert recyclerView != null;
         setupRecyclerView((RecyclerView) recyclerView);
 
-        if (findViewById(R.id.ariticle_detail_container) != null) {
+        if (findViewById(R.id.article_detail_container) != null) {
             // The detail container view will be present only in the
             // large-screen layouts (res/values-w900dp).
             // If this view is present, then the
@@ -101,7 +101,7 @@ public class ArticleListActivity extends AppCompatActivity {
                         ArticleDetailFragment fragment = new ArticleDetailFragment();
                         fragment.setArguments(arguments);
                         getSupportFragmentManager().beginTransaction()
-                                .replace(R.id.ariticle_detail_container, fragment)
+                                .replace(R.id.article_detail_container, fragment)
                                 .commit();
                     } else {
                         Context context = v.getContext();
