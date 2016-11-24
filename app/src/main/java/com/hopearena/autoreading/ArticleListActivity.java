@@ -2,6 +2,7 @@ package com.hopearena.autoreading;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.ApplicationInfo;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
@@ -17,7 +18,9 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.hopearena.autoreading.dummy.DummyContent;
+import com.hopearena.autoreading.model.ArticleListItem;
+import com.hopearena.autoreading.service.ArticleService;
+import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
 
 import java.util.List;
 
@@ -36,6 +39,8 @@ public class ArticleListActivity extends AppCompatActivity {
      * device.
      */
     private boolean mTwoPane;
+
+    private ArticleService articleService = new ArticleServiceImpl();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,15 +92,15 @@ public class ArticleListActivity extends AppCompatActivity {
     }
 
     private void setupRecyclerView(@NonNull RecyclerView recyclerView) {
-        recyclerView.setAdapter(new SimpleItemRecyclerViewAdapter(DummyContent.ITEMS));
+        recyclerView.setAdapter(new ArticleListItemRecyclerViewAdapter(articleService.getArticleListItems(this)));
     }
 
-    public class SimpleItemRecyclerViewAdapter
-            extends RecyclerView.Adapter<SimpleItemRecyclerViewAdapter.ViewHolder> {
+    public class ArticleListItemRecyclerViewAdapter
+            extends RecyclerView.Adapter<ArticleListItemRecyclerViewAdapter.ViewHolder> {
 
-        private final List<DummyContent.DummyItem> mValues;
+        private final List<ArticleListItem> mValues;
 
-        public SimpleItemRecyclerViewAdapter(List<DummyContent.DummyItem> items) {
+        public ArticleListItemRecyclerViewAdapter(List<ArticleListItem> items) {
             mValues = items;
         }
 
@@ -109,15 +114,17 @@ public class ArticleListActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(final ViewHolder holder, int position) {
             holder.mItem = mValues.get(position);
-            holder.mTitleView.setText(mValues.get(position).id);
-            holder.mDescView.setText(mValues.get(position).content);
+            ApplicationInfo appInfo = getApplicationInfo();
+            holder.mPicView.setImageResource(getResources().getIdentifier(holder.mItem.getPicId(), "drawable", appInfo.packageName));
+            holder.mTitleView.setText(holder.mItem.getTitle());
+            holder.mDescView.setText(holder.mItem.getDesc());
 
             holder.mView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     if (mTwoPane) {
                         Bundle arguments = new Bundle();
-                        arguments.putString(ArticleDetailFragment.ARG_ITEM_ID, holder.mItem.id);
+                        arguments.putString(ArticleDetailFragment.ARG_ITEM_ID, holder.mItem.getId());
                         ArticleDetailFragment fragment = new ArticleDetailFragment();
                         fragment.setArguments(arguments);
                         getSupportFragmentManager().beginTransaction()
@@ -126,7 +133,7 @@ public class ArticleListActivity extends AppCompatActivity {
                     } else {
                         Context context = v.getContext();
                         Intent intent = new Intent(context, ArticleDetailActivity.class);
-                        intent.putExtra(ArticleDetailFragment.ARG_ITEM_ID, holder.mItem.id);
+                        intent.putExtra(ArticleDetailFragment.ARG_ITEM_ID, holder.mItem.getId());
 
                         context.startActivity(intent);
                     }
@@ -140,11 +147,11 @@ public class ArticleListActivity extends AppCompatActivity {
         }
 
         public class ViewHolder extends RecyclerView.ViewHolder {
-            public final View mView;
-            public final ImageView mPicView;
-            public final TextView mTitleView;
-            public final TextView mDescView;
-            public DummyContent.DummyItem mItem;
+            View mView;
+            ImageView mPicView;
+            TextView mTitleView;
+            TextView mDescView;
+            ArticleListItem mItem;
 
             public ViewHolder(View view) {
                 super(view);
