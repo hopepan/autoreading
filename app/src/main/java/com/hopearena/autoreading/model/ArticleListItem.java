@@ -1,7 +1,9 @@
 package com.hopearena.autoreading.model;
 
 
-public class ArticleListItem {
+import java.io.Serializable;
+
+public class ArticleListItem implements Serializable {
 
     private String id;
     private String title;

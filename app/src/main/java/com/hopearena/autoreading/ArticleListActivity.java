@@ -115,7 +115,8 @@ public class ArticleListActivity extends AppCompatActivity {
         public void onBindViewHolder(final ViewHolder holder, int position) {
             holder.mItem = mValues.get(position);
             ApplicationInfo appInfo = getApplicationInfo();
-            holder.mPicView.setImageResource(getResources().getIdentifier(holder.mItem.getPicId(), "drawable", appInfo.packageName));
+//            holder.mPicView.setImageResource(getResources().getIdentifier(holder.mItem.getPicId(), "drawable", appInfo.packageName));
+            holder.mPicView.setImageResource(getResources().getIdentifier("ic_launcher", "mipmap", appInfo.packageName));
             holder.mTitleView.setText(holder.mItem.getTitle());
             holder.mDescView.setText(holder.mItem.getDesc());
 
@@ -123,6 +124,7 @@ public class ArticleListActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     if (mTwoPane) {
+                        System.out.println("1 panel");
                         Bundle arguments = new Bundle();
                         arguments.putString(ArticleDetailFragment.ARG_ITEM_ID, holder.mItem.getId());
                         ArticleDetailFragment fragment = new ArticleDetailFragment();

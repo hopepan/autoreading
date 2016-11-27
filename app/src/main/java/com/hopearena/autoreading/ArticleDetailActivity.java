@@ -11,6 +11,8 @@ import android.support.v7.app.ActionBar;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
+import com.hopearena.autoreading.model.ArticleListItem;
+
 /**
  * An activity representing a single Article detail screen. This
  * activity is only used narrow width devices. On tablet-size devices,
@@ -18,6 +20,8 @@ import android.view.MenuItem;
  * in a {@link ArticleListActivity}.
  */
 public class ArticleDetailActivity extends AppCompatActivity {
+
+    public static final String ARG_ITEM = "item";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,6 +60,7 @@ public class ArticleDetailActivity extends AppCompatActivity {
             Bundle arguments = new Bundle();
             arguments.putString(ArticleDetailFragment.ARG_ITEM_ID,
                     getIntent().getStringExtra(ArticleDetailFragment.ARG_ITEM_ID));
+            System.out.println("getIntent().getStringExtra(ArticleDetailFragment.ARG_ITEM_ID)>>"+getIntent().getStringExtra(ArticleDetailFragment.ARG_ITEM_ID));
             ArticleDetailFragment fragment = new ArticleDetailFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()

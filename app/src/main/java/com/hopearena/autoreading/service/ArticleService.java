@@ -10,4 +10,6 @@ import java.util.List;
 public interface ArticleService {
 
     List<ArticleListItem> getArticleListItems(Context context);
+
+    ArticleListItem getArticleListDetails(Context context, String itemId);
 }

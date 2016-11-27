@@ -10,14 +10,21 @@ import java.util.List;
 
 
 public class ArticleServiceImpl implements ArticleService {
+
+    public static final int COUNT = 20;
+
     @Override
     public List<ArticleListItem> getArticleListItems(final Context context) {
-        List<ArticleListItem> items = new ArrayList<>(10);
-        for (int i = 0; i<items.size(); i++) {
-            ArticleListItem item = new ArticleListItem(""+i, ""+i, "content"+i, "desc"+i);
+        List<ArticleListItem> items = new ArrayList<>();
+        for (int i = 0; i<COUNT; i++) {
+            ArticleListItem item = new ArticleListItem(""+i, ""+i, "title"+i, "desc"+i);
             items.add(item);
         }
-        System.out.println(items);
         return items;
+    }
+
+    @Override
+    public ArticleListItem getArticleListDetails(final Context context, String itemId) {
+        return new ArticleListItem("", itemId, "title"+itemId, "desc"+itemId);
     }
 }
