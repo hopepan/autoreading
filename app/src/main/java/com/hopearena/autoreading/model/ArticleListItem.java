@@ -9,15 +9,9 @@ public class ArticleListItem implements Serializable {
     private String title;
     private String desc;
     private String picId;
+    private String duration;
 
     public ArticleListItem() {
-    }
-
-    public ArticleListItem(final String picId, final String id, final String title, final String desc) {
-        this.picId = picId;
-        this.id = id;
-        this.title = title;
-        this.desc = desc;
     }
 
     public String getId() {
@@ -52,6 +46,14 @@ public class ArticleListItem implements Serializable {
         this.picId = picId;
     }
 
+    public String getDuration() {
+        return duration;
+    }
+
+    public void setDuration(String duration) {
+        this.duration = duration;
+    }
+
     @Override
     public String toString() {
         return "ArticleListItem{" +
@@ -59,6 +61,7 @@ public class ArticleListItem implements Serializable {
                 ", title='" + title + '\'' +
                 ", desc='" + desc + '\'' +
                 ", picId='" + picId + '\'' +
+                ", duration='" + duration + '\'' +
                 '}';
     }
 }

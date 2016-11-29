@@ -60,7 +60,6 @@ public class ArticleDetailActivity extends AppCompatActivity {
             Bundle arguments = new Bundle();
             arguments.putString(ArticleDetailFragment.ARG_ITEM_ID,
                     getIntent().getStringExtra(ArticleDetailFragment.ARG_ITEM_ID));
-            System.out.println("getIntent().getStringExtra(ArticleDetailFragment.ARG_ITEM_ID)>>"+getIntent().getStringExtra(ArticleDetailFragment.ARG_ITEM_ID));
             ArticleDetailFragment fragment = new ArticleDetailFragment();
             fragment.setArguments(arguments);
             getSupportFragmentManager().beginTransaction()

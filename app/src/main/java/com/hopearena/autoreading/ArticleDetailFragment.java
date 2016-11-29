@@ -10,6 +10,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.hopearena.autoreading.dummy.DummyContent;
+import com.hopearena.autoreading.model.ArticleDetail;
 import com.hopearena.autoreading.model.ArticleListItem;
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
@@ -30,7 +31,7 @@ public class ArticleDetailFragment extends Fragment {
     /**
      * The content this fragment is presenting.
      */
-    private ArticleListItem mItem;
+    private ArticleDetail mItem;
 
     private ArticleService articleService = new ArticleServiceImpl();
 
@@ -50,7 +51,6 @@ public class ArticleDetailFragment extends Fragment {
             // arguments. In a real-world scenario, use a Loader
             // to load content from a content provider.
 //            mItem = DummyContent.ITEM_MAP.get(getArguments().getString(ARG_ITEM_ID));
-            System.out.println("getArguments().getString(ARG_ITEM_ID)>>"+getArguments().getString(ARG_ITEM_ID));
             mItem = articleService.getArticleListDetails(this.getContext(), getArguments().getString(ARG_ITEM_ID));
 
             Activity activity = this.getActivity();
@@ -68,7 +68,7 @@ public class ArticleDetailFragment extends Fragment {
 
         // Show the content as text in a TextView.
         if (mItem != null) {
-            ((TextView) rootView.findViewById(R.id.ariticle_detail)).setText(mItem.getDesc());
+            ((TextView) rootView.findViewById(R.id.ariticle_detail)).setText(mItem.getContent());
         }
 
         return rootView;

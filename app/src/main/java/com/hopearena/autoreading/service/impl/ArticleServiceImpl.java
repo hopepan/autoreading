@@ -2,6 +2,7 @@ package com.hopearena.autoreading.service.impl;
 
 import android.content.Context;
 
+import com.hopearena.autoreading.model.ArticleDetail;
 import com.hopearena.autoreading.model.ArticleListItem;
 import com.hopearena.autoreading.service.ArticleService;
 
@@ -17,14 +18,19 @@ public class ArticleServiceImpl implements ArticleService {
     public List<ArticleListItem> getArticleListItems(final Context context) {
         List<ArticleListItem> items = new ArrayList<>();
         for (int i = 0; i<COUNT; i++) {
-            ArticleListItem item = new ArticleListItem(""+i, ""+i, "title"+i, "desc"+i);
+            ArticleListItem item = new ArticleListItem();
+            item.setId(""+i);
+            item.setTitle("title"+i);
+            item.setDesc("desc"+i);
+            item.setPicId(""+i);
+            item.setDuration("");
             items.add(item);
         }
         return items;
     }
 
     @Override
-    public ArticleListItem getArticleListDetails(final Context context, String itemId) {
-        return new ArticleListItem("", itemId, "title"+itemId, "desc"+itemId);
+    public ArticleDetail getArticleListDetails(final Context context, String itemId) {
+        return new ArticleDetail();
     }
 }

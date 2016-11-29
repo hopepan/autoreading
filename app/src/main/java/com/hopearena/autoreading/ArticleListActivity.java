@@ -124,7 +124,6 @@ public class ArticleListActivity extends AppCompatActivity {
                 @Override
                 public void onClick(View v) {
                     if (mTwoPane) {
-                        System.out.println("1 panel");
                         Bundle arguments = new Bundle();
                         arguments.putString(ArticleDetailFragment.ARG_ITEM_ID, holder.mItem.getId());
                         ArticleDetailFragment fragment = new ArticleDetailFragment();
