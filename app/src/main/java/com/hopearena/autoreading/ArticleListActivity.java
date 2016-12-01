@@ -76,7 +76,7 @@ public class ArticleListActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_item, menu);
-        return true;
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override
@@ -84,7 +84,12 @@ public class ArticleListActivity extends AppCompatActivity {
 
         switch (item.getItemId())
         {
-            case R.id.nav_home:
+            case R.id.menu_search:
+                // add autocomplete list
+
+                break;
+            case R.id.menu_add:
+
                 break;
         }
 
