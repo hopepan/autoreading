@@ -21,8 +21,6 @@ import com.hopearena.autoreading.model.ArticleListItem;
  */
 public class ArticleDetailActivity extends AppCompatActivity {
 
-    public static final String ARG_ITEM = "item";
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

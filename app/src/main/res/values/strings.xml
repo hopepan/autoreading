@@ -17,4 +17,5 @@
     </string>
     <string name="title_article_list">Articles</string>
     <string name="title_article_detail">Article Detail</string>
+    <string name="title_activity_article_add">Add Article</string>
 </resources>

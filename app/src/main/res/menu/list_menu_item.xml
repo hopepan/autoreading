@@ -4,15 +4,15 @@
 
     <item
         android:id="@+id/menu_search"
-        app:showasaction="always"
+        app:showAsAction="ifRoom"
         android:icon="@android:drawable/ic_menu_search"
-        android:orderincategory="1"
+        app:actionViewClass="android.support.v7.widget.SearchView"
         android:title="search"></item>
+
     <item
         android:id="@+id/menu_add"
-        app:showasaction="always"
+        app:showAsAction="ifRoom"
         android:icon="@android:drawable/ic_menu_add"
-        android:orderincategory="1"
         android:title="add"></item>
 
 </menu>

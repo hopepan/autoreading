@@ -9,6 +9,7 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.view.LayoutInflater;
 import android.view.Menu;
@@ -75,7 +76,20 @@ public class ArticleListActivity extends AppCompatActivity {
 
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_item, menu);
+        getMenuInflater().inflate(R.menu.list_menu_item, menu);
+        SearchView searchView = (SearchView) menu.findItem(R.id.menu_search).getActionView();
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener(){
+
+            @Override
+            public boolean onQueryTextSubmit(String query) {
+                return false;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                return false;
+            }
+        });
         return super.onCreateOptionsMenu(menu);
     }
 
@@ -89,7 +103,8 @@ public class ArticleListActivity extends AppCompatActivity {
 
                 break;
             case R.id.menu_add:
-
+                Intent intent = new Intent(ArticleListActivity.this, ArticleAddActivity.class);
+                startActivity(intent);
                 break;
         }
 
