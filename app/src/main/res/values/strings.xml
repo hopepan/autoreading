@@ -18,4 +18,10 @@
     <string name="title_article_list">Articles</string>
     <string name="title_article_detail">Article Detail</string>
     <string name="title_activity_article_add">Add Article</string>
+    <string name="list_item_image">image</string>
+    <string name="list_item_desc">desc</string>
+    <string name="list_item_title">title</string>
+    <string name="play_button">Play</string>
+    <string name="pause_button">Pause</string>
+    <string name="add_content">recording</string>
 </resources>

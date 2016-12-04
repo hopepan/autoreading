@@ -11,7 +11,6 @@ import android.support.v7.app.ActionBar;
 import android.support.v4.app.NavUtils;
 import android.view.MenuItem;
 
-import com.hopearena.autoreading.model.ArticleListItem;
 
 /**
  * An activity representing a single Article detail screen. This
