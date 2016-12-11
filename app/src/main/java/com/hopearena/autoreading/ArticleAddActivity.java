@@ -1,7 +1,11 @@
 package com.hopearena.autoreading;
 
+import android.content.ActivityNotFoundException;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.os.Bundle;
+import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.NavUtils;
@@ -10,8 +14,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 public class ArticleAddActivity extends AppCompatActivity {
+
+    private TextView txtSpeechInput;
+    private Button btnSpeak;
+    private final int REQ_CODE_SPEECH_INPUT = 100;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -33,6 +47,64 @@ public class ArticleAddActivity extends AppCompatActivity {
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+
+        txtSpeechInput = (TextView) findViewById(R.id.add_content);
+        btnSpeak = (Button) findViewById(R.id.play_button);
+        PackageManager pm = getPackageManager();
+        List<ResolveInfo> activities = pm.queryIntentActivities(
+                new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
+        if (activities.size() != 0) {
+            btnSpeak.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(final View view) {
+                    promptSpeechInput(view);
+                }
+            });
+        } else {
+            btnSpeak.setEnabled(false);
+            Snackbar.make(findViewById(R.id.content_article_add),
+                    getString(R.string.speech_not_supported),
+                    Snackbar.LENGTH_SHORT).show();
+        }
+
+    }
+
+    /**
+     * Showing google speech input dialog
+     * */
+    private void promptSpeechInput(View view) {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+    }
+
+    /**
+     * Receiving speech input
+     * */
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        switch (requestCode) {
+            case REQ_CODE_SPEECH_INPUT: {
+                if (resultCode == RESULT_OK && null != data) {
+
+                    ArrayList<String> result = data
+                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+                    String resultString = txtSpeechInput.getText().toString();
+                    for(int i=0;i<result.size();i++){
+                        resultString += result.get(i);
+                    }
+                    txtSpeechInput.setText(resultString);
+                }
+                break;
+            }
+
         }
     }
 

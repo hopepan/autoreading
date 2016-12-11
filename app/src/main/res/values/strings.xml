@@ -23,5 +23,7 @@
     <string name="list_item_title">title</string>
     <string name="play_button">Play</string>
     <string name="pause_button">Pause</string>
-    <string name="add_content">recording</string>
+    <string name="add_content">Say something</string>
+    <string name="speech_prompt"><![CDATA[Say something&#8230;]]></string>
+    <string name="speech_not_supported">Sorry! Your device doesn\\\'t support speech input</string>
 </resources>
