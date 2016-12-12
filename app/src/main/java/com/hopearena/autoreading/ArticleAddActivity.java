@@ -1,6 +1,5 @@
 package com.hopearena.autoreading;
 
-import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -9,12 +8,16 @@ import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.NavUtils;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -23,8 +26,7 @@ import java.util.Locale;
 
 public class ArticleAddActivity extends AppCompatActivity {
 
-    private TextView txtSpeechInput;
-    private Button btnSpeak;
+    private EditText txtSpeechInput;
     private final int REQ_CODE_SPEECH_INPUT = 100;
 
     @Override
@@ -34,46 +36,37 @@ public class ArticleAddActivity extends AppCompatActivity {
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
 
+        txtSpeechInput = (EditText) findViewById(R.id.add_content);
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
-        fab.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
-                        .setAction("Action", null).show();
-            }
-        });
+        PackageManager pm = getPackageManager();
+        List<ResolveInfo> activities = pm.queryIntentActivities(
+                new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
+        if (activities.size() != 0) {
+            fab.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    promptSpeechInput();
+                }
+            });
+        } else {
+            fab.setEnabled(false);
+            Snackbar.make(findViewById(R.id.content_article_add),
+                    getString(R.string.speech_not_supported),
+                    Snackbar.LENGTH_SHORT).show();
+        }
 
         // Show the Up button in the action bar.
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-
-        txtSpeechInput = (TextView) findViewById(R.id.add_content);
-        btnSpeak = (Button) findViewById(R.id.play_button);
-        PackageManager pm = getPackageManager();
-        List<ResolveInfo> activities = pm.queryIntentActivities(
-                new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
-        if (activities.size() != 0) {
-            btnSpeak.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(final View view) {
-                    promptSpeechInput(view);
-                }
-            });
-        } else {
-            btnSpeak.setEnabled(false);
-            Snackbar.make(findViewById(R.id.content_article_add),
-                    getString(R.string.speech_not_supported),
-                    Snackbar.LENGTH_SHORT).show();
-        }
-
     }
 
     /**
      * Showing google speech input dialog
      * */
-    private void promptSpeechInput(View view) {
+    private void promptSpeechInput() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                 RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
@@ -123,5 +116,11 @@ public class ArticleAddActivity extends AppCompatActivity {
             return true;
         }
         return super.onOptionsItemSelected(item);
+    }
+
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.add_menu_item, menu);
+        return super.onCreateOptionsMenu(menu);
     }
 }

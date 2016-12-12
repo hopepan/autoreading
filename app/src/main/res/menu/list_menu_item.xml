@@ -7,12 +7,12 @@
         app:showAsAction="ifRoom"
         android:icon="@android:drawable/ic_menu_search"
         app:actionViewClass="android.support.v7.widget.SearchView"
-        android:title="search"></item>
+        android:title="@string/list_menu_search"></item>
 
     <item
         android:id="@+id/menu_add"
         app:showAsAction="ifRoom"
         android:icon="@android:drawable/ic_menu_add"
-        android:title="add"></item>
+        android:title="@string/list_menu_add"></item>
 
 </menu>

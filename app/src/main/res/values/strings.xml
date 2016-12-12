@@ -21,9 +21,12 @@
     <string name="list_item_image">image</string>
     <string name="list_item_desc">desc</string>
     <string name="list_item_title">title</string>
-    <string name="play_button">Play</string>
-    <string name="pause_button">Pause</string>
     <string name="add_content">Say something</string>
     <string name="speech_prompt"><![CDATA[Say something&#8230;]]></string>
     <string name="speech_not_supported">Sorry! Your device doesn\\\'t support speech input</string>
+    <string name="add_menu_save_remote">Save Remote</string>
+    <string name="add_menu_save_local">Save Local</string>
+    <string name="add_menu_setting">Setting</string>
+    <string name="list_menu_add">add</string>
+    <string name="list_menu_search">search</string>
 </resources>
