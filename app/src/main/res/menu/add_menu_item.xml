@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/add_menu_save_local"
+        app:showAsAction="collapseActionView"
+        android:icon="@android:drawable/ic_menu_search"
+        android:title="@string/add_menu_save_local"></item>
+
+    <item
+        android:id="@+id/add_menu_save_remote"
+        android:icon="@android:drawable/ic_menu_add"
+        android:title="@string/add_menu_save_remote"
+        app:showAsAction="collapseActionView"></item>
+
+    <item
+        android:id="@+id/add_menu_setting"
+        android:icon="@android:drawable/ic_menu_add"
+        android:title="@string/add_menu_setting"
+        app:showAsAction="collapseActionView"></item>
+</menu>
