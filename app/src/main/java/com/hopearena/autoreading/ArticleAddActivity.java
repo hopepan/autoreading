@@ -3,6 +3,7 @@ package com.hopearena.autoreading;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
@@ -19,6 +20,7 @@ import android.widget.EditText;
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -27,6 +29,7 @@ public class ArticleAddActivity extends AppCompatActivity {
 
     private final int REQ_CODE_SPEECH_INPUT = 100;
     private EditText txtSpeechInput;
+    MediaRecorder mediaRecorder;
     private ArticleService articleService = new ArticleServiceImpl();
 
     @Override
@@ -37,7 +40,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         txtSpeechInput = (EditText) findViewById(R.id.add_content);
-
+        mediaRecorder = new MediaRecorder();
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         PackageManager pm = getPackageManager();
         List<ResolveInfo> activities = pm.queryIntentActivities(
@@ -74,6 +77,24 @@ public class ArticleAddActivity extends AppCompatActivity {
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
                 getString(R.string.speech_prompt));
         startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        record();
+    }
+
+    private void record(){
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
+        mediaRecorder.setOutputFile("file:///sdcard/myvido/a.3pg");
+
+        try {
+            mediaRecorder.prepare();
+            mediaRecorder.start();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
     }
 
     /**
