@@ -20,7 +20,22 @@
         android:ems="10"
         android:id="@+id/add_content"
         android:hint="@string/add_content"
+        android:layout_above="@+id/play_button"
         android:background="@drawable/add_content_textview_border"
         android:padding="3dp"/>
 
+    <Button
+        android:text="@string/play_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:id="@+id/play_button"
+        android:layout_above="@+id/pause_button"
+        />
+
+    <Button
+        android:text="@string/pause_button"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true"
+        android:id="@+id/pause_button"/>
 </RelativeLayout>

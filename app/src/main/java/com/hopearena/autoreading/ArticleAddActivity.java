@@ -3,8 +3,10 @@ package com.hopearena.autoreading;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -15,21 +17,29 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 
+import static android.R.attr.button;
+import static android.R.attr.data;
+
 public class ArticleAddActivity extends AppCompatActivity {
 
     private final int REQ_CODE_SPEECH_INPUT = 100;
     private EditText txtSpeechInput;
-    MediaRecorder mediaRecorder;
+    private Button playButton;
+    private Button pauseButton;
+    private MediaRecorder mediaRecorder;
+    private MediaPlayer mediaPlayer;
     private ArticleService articleService = new ArticleServiceImpl();
 
     @Override
@@ -41,6 +51,8 @@ public class ArticleAddActivity extends AppCompatActivity {
 
         txtSpeechInput = (EditText) findViewById(R.id.add_content);
         mediaRecorder = new MediaRecorder();
+        mediaPlayer = new MediaPlayer();
+
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         PackageManager pm = getPackageManager();
         List<ResolveInfo> activities = pm.queryIntentActivities(
@@ -64,6 +76,43 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
+
+        playButton = (Button) findViewById(R.id.play_button);
+        playButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                try {
+                    File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
+                    if (!fpath.exists()) {
+                        fpath.mkdirs();
+                    }
+                    mediaPlayer.setDataSource(fpath + "/test.3gp");
+                    mediaPlayer.prepare();
+                    mediaPlayer.start();
+                } catch (IllegalArgumentException e) {
+                    e.printStackTrace();
+                } catch (IllegalStateException e) {
+                    e.printStackTrace();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
+                    @Override
+                    public void onCompletion(MediaPlayer mp) {
+                        mp.release();
+                    }
+                });
+            }
+        });
+        pauseButton = (Button) findViewById(R.id.pause_button);
+        pauseButton.setOnClickListener(new View.OnClickListener(){
+            @Override
+            public void onClick(View v) {
+                if(mediaPlayer != null){
+                    mediaPlayer.stop();
+                }
+            }
+        });
     }
 
     /**
@@ -84,7 +133,11 @@ public class ArticleAddActivity extends AppCompatActivity {
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
-        mediaRecorder.setOutputFile("file:///sdcard/myvido/a.3pg");
+        File fpath = new File(this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
+        if (!fpath.exists()) {
+            fpath.mkdirs();
+        }
+        mediaRecorder.setOutputFile(fpath + "/test.3gp");
 
         try {
             mediaRecorder.prepare();
