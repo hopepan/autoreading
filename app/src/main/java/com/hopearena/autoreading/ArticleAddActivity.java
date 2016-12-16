@@ -1,5 +1,6 @@
 package com.hopearena.autoreading;
 
+import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
@@ -19,9 +20,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.Toast;
 
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
+import com.hopearena.autoreading.util.PermissionUtil;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,6 +34,7 @@ import java.util.Locale;
 
 import static android.R.attr.button;
 import static android.R.attr.data;
+import static android.R.attr.permission;
 
 public class ArticleAddActivity extends AppCompatActivity {
 
@@ -126,7 +130,9 @@ public class ArticleAddActivity extends AppCompatActivity {
         intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
                 getString(R.string.speech_prompt));
         startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
-        record();
+        if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+            record();
+        }
     }
 
     private void record(){
@@ -173,6 +179,20 @@ public class ArticleAddActivity extends AppCompatActivity {
             }
 
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        if (requestCode == PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO) {
+            if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                record();
+            } else {
+                // Permission Denied
+                Snackbar.make(findViewById(R.id.content_article_add), "您没有授权该权限，请在设置中打开授权", Snackbar.LENGTH_SHORT).show();
+            }
+            return;
+        }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
