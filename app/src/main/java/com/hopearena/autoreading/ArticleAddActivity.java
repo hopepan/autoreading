@@ -7,7 +7,6 @@ import android.content.pm.ResolveInfo;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
@@ -20,21 +19,23 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.Toast;
 
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
+import com.hopearena.autoreading.util.JsonParser;
 import com.hopearena.autoreading.util.PermissionUtil;
+import com.iflytek.cloud.RecognizerListener;
+import com.iflytek.cloud.RecognizerResult;
+import com.iflytek.cloud.SpeechConstant;
+import com.iflytek.cloud.SpeechError;
+import com.iflytek.cloud.SpeechRecognizer;
+import com.iflytek.cloud.SpeechUtility;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-
-import static android.R.attr.button;
-import static android.R.attr.data;
-import static android.R.attr.permission;
 
 public class ArticleAddActivity extends AppCompatActivity {
 
@@ -45,6 +46,7 @@ public class ArticleAddActivity extends AppCompatActivity {
     private MediaRecorder mediaRecorder;
     private MediaPlayer mediaPlayer;
     private ArticleService articleService = new ArticleServiceImpl();
+    private SpeechRecognizer mIat;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -115,6 +117,60 @@ public class ArticleAddActivity extends AppCompatActivity {
                 if(mediaPlayer != null){
                     mediaPlayer.stop();
                 }
+            }
+        });
+    }
+
+    //http://blog.csdn.net/imhxl/article/details/50854146
+    private void recordAudio() {
+        SpeechUtility.createUtility(this, "appid=123456789");
+        mIat = SpeechRecognizer.createRecognizer(this, null);
+        mIat.setParameter(SpeechConstant.PARAMS, null);
+        mIat.setParameter(SpeechConstant.DOMAIN, "iat");
+        mIat.setParameter(SpeechConstant.LANGUAGE, "zh_cn");
+        //普通话：mandarin(默认)
+        //粤 语：cantonese
+        //四川话：lmz
+        //河南话：henanese
+        mIat.setParameter(SpeechConstant.ACCENT, "mandarin");
+        mIat.setParameter(SpeechConstant.ENGINE_TYPE, "cloud");
+        mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
+        mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
+        //在传文件路径方式（-2）下，SDK通过应用层设置的ASR_SOURCE_PATH值， 直接读取音频文件。目前仅在SpeechRecognizer中支持。
+        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-2");
+        //保存音频文件的路径   仅支持pcm和wav
+        mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/test.wav");
+
+        mIat.startListening(new RecognizerListener() {
+            @Override
+            public void onVolumeChanged(int i, byte[] bytes) {
+
+            }
+
+            @Override
+            public void onBeginOfSpeech() {
+                System.out.println("开始识别");
+            }
+
+            @Override
+            public void onEndOfSpeech() {
+                System.out.println("识别结束");
+            }
+
+            @Override
+            public void onResult(RecognizerResult recognizerResult, boolean b) {
+                String str = JsonParser.parseIatResult(recognizerResult.getResultString());
+                System.out.println("识别结果"+str);
+            }
+
+            @Override
+            public void onError(SpeechError speechError) {
+                System.out.println("识别出错");
+            }
+
+            @Override
+            public void onEvent(int i, int i1, int i2, Bundle bundle) {
+
             }
         });
     }
