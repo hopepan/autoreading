@@ -47,6 +47,7 @@ public class ArticleAddActivity extends AppCompatActivity {
     private MediaPlayer mediaPlayer;
     private ArticleService articleService = new ArticleServiceImpl();
     private SpeechRecognizer mIat;
+    private boolean isRecording = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -56,7 +57,6 @@ public class ArticleAddActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         txtSpeechInput = (EditText) findViewById(R.id.add_content);
-        mediaRecorder = new MediaRecorder();
         mediaPlayer = new MediaPlayer();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
@@ -67,12 +67,14 @@ public class ArticleAddActivity extends AppCompatActivity {
             fab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    promptSpeechInput();
+                    if(PermissionUtil.requestPermission(ArticleAddActivity.this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+                        recordAudio();
+                    }
                 }
             });
         } else {
             fab.setEnabled(false);
-            Snackbar.make(findViewById(R.id.content_article_add),
+            Snackbar.make(findViewById(R.id.add_main_clayout),
                     getString(R.string.speech_not_supported),
                     Snackbar.LENGTH_SHORT).show();
         }
@@ -119,12 +121,25 @@ public class ArticleAddActivity extends AppCompatActivity {
                 }
             }
         });
+
+        SpeechUtility.createUtility(this, "appid=583ba0a6");
+        mIat = SpeechRecognizer.createRecognizer(this, null);
+
+    }
+
+    private void recordAudio() {
+        System.out.println("isRacording>>"+isRecording);
+        if(isRecording) {
+            stopRecording();
+        } else {
+            if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+                startRecording();
+            }
+        }
     }
 
     //http://blog.csdn.net/imhxl/article/details/50854146
-    private void recordAudio() {
-        SpeechUtility.createUtility(this, "appid=123456789");
-        mIat = SpeechRecognizer.createRecognizer(this, null);
+    private void translateAudio() {
         mIat.setParameter(SpeechConstant.PARAMS, null);
         mIat.setParameter(SpeechConstant.DOMAIN, "iat");
         mIat.setParameter(SpeechConstant.LANGUAGE, "zh_cn");
@@ -141,7 +156,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         //保存音频文件的路径   仅支持pcm和wav
         mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/test.wav");
 
-        mIat.startListening(new RecognizerListener() {
+        int ret = mIat.startListening(new RecognizerListener() {
             @Override
             public void onVolumeChanged(int i, byte[] bytes) {
 
@@ -149,22 +164,34 @@ public class ArticleAddActivity extends AppCompatActivity {
 
             @Override
             public void onBeginOfSpeech() {
+                Snackbar.make(findViewById(R.id.add_main_clayout),
+                        "开始识别",
+                        Snackbar.LENGTH_SHORT).show();
                 System.out.println("开始识别");
             }
 
             @Override
             public void onEndOfSpeech() {
+                Snackbar.make(findViewById(R.id.add_main_clayout),
+                        "识别结束",
+                        Snackbar.LENGTH_SHORT).show();
                 System.out.println("识别结束");
             }
 
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean b) {
                 String str = JsonParser.parseIatResult(recognizerResult.getResultString());
+                Snackbar.make(findViewById(R.id.add_main_clayout),
+                        str,
+                        Snackbar.LENGTH_SHORT).show();
                 System.out.println("识别结果"+str);
             }
 
             @Override
             public void onError(SpeechError speechError) {
+                Snackbar.make(findViewById(R.id.add_main_clayout),
+                        speechError.getErrorDescription() + speechError.toString(),
+                        Snackbar.LENGTH_SHORT).show();
                 System.out.println("识别出错");
             }
 
@@ -187,29 +214,39 @@ public class ArticleAddActivity extends AppCompatActivity {
                 getString(R.string.speech_prompt));
         startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
         if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-            record();
+            startRecording();
         }
     }
 
-    private void record(){
+    private void startRecording(){
+        mediaRecorder = new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.DEFAULT);
         File fpath = new File(this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
+        System.out.println("fpath>>"+fpath);
+        System.out.println("exist>>"+fpath.exists());
         if (!fpath.exists()) {
             fpath.mkdirs();
         }
         mediaRecorder.setOutputFile(fpath + "/test.3gp");
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
 
         try {
             mediaRecorder.prepare();
-            mediaRecorder.start();
         } catch (IllegalStateException e) {
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
+        mediaRecorder.start();
+        isRecording = true;
+        System.out.println("done");
+    }
 
+    private void stopRecording() {
+        mediaRecorder.stop();
+        mediaRecorder.release();
+        isRecording = false;
     }
 
     /**
@@ -241,10 +278,10 @@ public class ArticleAddActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                record();
+                startRecording();
             } else {
                 // Permission Denied
-                Snackbar.make(findViewById(R.id.content_article_add), "您没有授权该权限，请在设置中打开授权", Snackbar.LENGTH_SHORT).show();
+                Snackbar.make(findViewById(R.id.add_main_clayout), "您没有授权该权限，请在设置中打开授权", Snackbar.LENGTH_SHORT).show();
             }
             return;
         }
