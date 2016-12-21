@@ -10,6 +10,7 @@ import android.media.AudioRecord;
 import android.media.MediaRecorder;
 
 
+
 public class AudioRecordFunc {
     // 缓冲区字节大小
     private int bufferSizeInBytes = 0;
