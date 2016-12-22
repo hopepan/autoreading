@@ -44,7 +44,7 @@ public class ArticleAddActivity extends AppCompatActivity {
     private Button playButton;
     private Button pauseButton;
     private MediaRecorder mediaRecorder;
-    private MediaPlayer mediaPlayer;
+    private MediaPlayer mediaPlayer = new MediaPlayer();;
     private ArticleService articleService = new ArticleServiceImpl();
     private SpeechRecognizer mIat;
     private boolean isRecording = false;
@@ -57,7 +57,6 @@ public class ArticleAddActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         txtSpeechInput = (EditText) findViewById(R.id.add_content);
-        mediaPlayer = new MediaPlayer();
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         PackageManager pm = getPackageManager();
@@ -90,6 +89,7 @@ public class ArticleAddActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 try {
+                    mediaPlayer = new MediaPlayer();
                     File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
                     if (!fpath.exists()) {
                         fpath.mkdirs();
