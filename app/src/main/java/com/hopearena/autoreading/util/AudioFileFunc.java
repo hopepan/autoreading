@@ -1,5 +1,6 @@
 package com.hopearena.autoreading.util;
 
+import android.content.Context;
 import android.os.Environment;
 import java.io.File;
 import android.media.MediaRecorder;
@@ -12,32 +13,30 @@ public class AudioFileFunc {
     //44100是目前的标准，但是某些设备仍然支持22050，16000，11025
     public final static int AUDIO_SAMPLE_RATE = 44100;  //44.1KHz,普遍使用的频率
     //录音输出文件
-    private final static String AUDIO_RAW_FILENAME = "RawAudio.raw";
-    private final static String AUDIO_WAV_FILENAME = "FinalAudio.wav";
-    public final static String AUDIO_AMR_FILENAME = "FinalAudio.amr";
+    private final static String AUDIO_RAW_FILENAME = "/data/audio/test.raw";
+    private final static String AUDIO_WAV_FILENAME = "/data/audio/finalAudio.wav";
+    public final static String AUDIO_AMR_FILENAME = "/data/audio/finalAudio.amr";
 
     /**
      * 判断是否有外部存储设备sdcard
      * @return true | false
      */
     public static boolean isSdcardExit(){
-        if (Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED))
-            return true;
-        else
-            return false;
+        return (Environment.getExternalStorageState().equals(android.os.Environment.MEDIA_MOUNTED) || !Environment.isExternalStorageRemovable());
     }
 
     /**
      * 获取麦克风输入的原始音频流文件路径
      * @return
      */
-    public static String getRawFilePath(){
+    public static String getRawFilePath(Context context){
         String mAudioRawPath = "";
         if(isSdcardExit()){
-            String fileBasePath = Environment.getExternalStorageDirectory().getAbsolutePath();
-            mAudioRawPath = fileBasePath+"/"+AUDIO_RAW_FILENAME;
+            mAudioRawPath = context.getExternalCacheDir().getAbsolutePath();
+        } else {
+            mAudioRawPath = context.getCacheDir().getAbsolutePath();
         }
-
+        mAudioRawPath += AUDIO_RAW_FILENAME;
         return mAudioRawPath;
     }
 
@@ -45,12 +44,14 @@ public class AudioFileFunc {
      * 获取编码后的WAV格式音频文件路径
      * @return
      */
-    public static String getWavFilePath(){
+    public static String getWavFilePath(Context context){
         String mAudioWavPath = "";
         if(isSdcardExit()){
-            String fileBasePath = Environment.getExternalStorageDirectory().getAbsolutePath();
-            mAudioWavPath = fileBasePath+"/"+AUDIO_WAV_FILENAME;
+            mAudioWavPath = context.getExternalCacheDir().getAbsolutePath();
+        } else {
+            mAudioWavPath = context.getCacheDir().getAbsolutePath();
         }
+        mAudioWavPath += AUDIO_WAV_FILENAME;
         return mAudioWavPath;
     }
 
@@ -59,12 +60,14 @@ public class AudioFileFunc {
      * 获取编码后的AMR格式音频文件路径
      * @return
      */
-    public static String getAMRFilePath(){
+    public static String getAMRFilePath(Context context){
         String mAudioAMRPath = "";
         if(isSdcardExit()){
-            String fileBasePath = Environment.getExternalStorageDirectory().getAbsolutePath();
-            mAudioAMRPath = fileBasePath+"/"+AUDIO_AMR_FILENAME;
+            mAudioAMRPath = context.getExternalCacheDir().getAbsolutePath();
+        } else {
+            mAudioAMRPath = context.getCacheDir().getAbsolutePath();
         }
+        mAudioAMRPath += AUDIO_AMR_FILENAME;
         return mAudioAMRPath;
     }
 

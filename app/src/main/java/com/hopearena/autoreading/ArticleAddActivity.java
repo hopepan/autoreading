@@ -4,6 +4,10 @@ import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -22,6 +26,8 @@ import android.widget.EditText;
 
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
+import com.hopearena.autoreading.util.AudioRecordFunc;
+import com.hopearena.autoreading.util.ErrorCode;
 import com.hopearena.autoreading.util.JsonParser;
 import com.hopearena.autoreading.util.PermissionUtil;
 import com.iflytek.cloud.RecognizerListener;
@@ -39,10 +45,13 @@ import java.util.Locale;
 
 public class ArticleAddActivity extends AppCompatActivity {
 
+    private Drawable RECORDING_DRAWABLE;
+    private Drawable STOP_DRAWABLE;
     private final int REQ_CODE_SPEECH_INPUT = 100;
     private EditText txtSpeechInput;
     private Button playButton;
     private Button pauseButton;
+    private FloatingActionButton fab;
     private MediaRecorder mediaRecorder;
     private MediaPlayer mediaPlayer = new MediaPlayer();;
     private ArticleService articleService = new ArticleServiceImpl();
@@ -58,7 +67,7 @@ public class ArticleAddActivity extends AppCompatActivity {
 
         txtSpeechInput = (EditText) findViewById(R.id.add_content);
 
-        FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
+        fab = (FloatingActionButton) findViewById(R.id.fab);
         PackageManager pm = getPackageManager();
         List<ResolveInfo> activities = pm.queryIntentActivities(
                 new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
@@ -66,8 +75,9 @@ public class ArticleAddActivity extends AppCompatActivity {
             fab.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View view) {
-                    if(PermissionUtil.requestPermission(ArticleAddActivity.this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-                        recordAudio();
+                    if(PermissionUtil.requestPermission(ArticleAddActivity.this,
+                            Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+                        recordAudioFile();
                     }
                 }
             });
@@ -125,10 +135,24 @@ public class ArticleAddActivity extends AppCompatActivity {
         SpeechUtility.createUtility(this, "appid=583ba0a6");
         mIat = SpeechRecognizer.createRecognizer(this, null);
 
+        RECORDING_DRAWABLE = new BitmapDrawable(getResources(),
+                BitmapFactory.decodeResource(getResources(), android.R.drawable.presence_video_busy));
+        STOP_DRAWABLE = new BitmapDrawable(getResources(),
+                BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_btn_speak_now));
     }
 
+    private void recordAudioFile() {
+        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(this.getApplicationContext());
+        if(ErrorCode.E_STATE_RECODING == ret) {
+            AudioRecordFunc.getInstance().stopRecordAndFile();
+            fab.setImageDrawable(STOP_DRAWABLE);
+        } else if(ErrorCode.SUCCESS == ret) {
+            fab.setImageDrawable(RECORDING_DRAWABLE);
+        }
+    }
+
+    @Deprecated
     private void recordAudio() {
-        System.out.println("isRacording>>"+isRecording);
         if(isRecording) {
             stopRecording();
         } else {
@@ -152,7 +176,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
         mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
         //在传文件路径方式（-2）下，SDK通过应用层设置的ASR_SOURCE_PATH值， 直接读取音频文件。目前仅在SpeechRecognizer中支持。
-        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-2");
+        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-1");
         //保存音频文件的路径   仅支持pcm和wav
         mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/test.wav");
 
@@ -205,6 +229,7 @@ public class ArticleAddActivity extends AppCompatActivity {
     /**
      * Showing google speech input dialog
      * */
+    @Deprecated
     private void promptSpeechInput() {
         Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
         intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -218,13 +243,12 @@ public class ArticleAddActivity extends AppCompatActivity {
         }
     }
 
+    @Deprecated
     private void startRecording(){
         mediaRecorder = new MediaRecorder();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
         File fpath = new File(this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
-        System.out.println("fpath>>"+fpath);
-        System.out.println("exist>>"+fpath.exists());
         if (!fpath.exists()) {
             fpath.mkdirs();
         }
@@ -241,8 +265,10 @@ public class ArticleAddActivity extends AppCompatActivity {
         mediaRecorder.start();
         isRecording = true;
         System.out.println("done");
+
     }
 
+    @Deprecated
     private void stopRecording() {
         mediaRecorder.stop();
         mediaRecorder.release();
@@ -253,6 +279,7 @@ public class ArticleAddActivity extends AppCompatActivity {
      * Receiving speech input
      * */
     @Override
+    @Deprecated
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
@@ -278,7 +305,8 @@ public class ArticleAddActivity extends AppCompatActivity {
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                startRecording();
+//                startRecording();
+                recordAudioFile();
             } else {
                 // Permission Denied
                 Snackbar.make(findViewById(R.id.add_main_clayout), "您没有授权该权限，请在设置中打开授权", Snackbar.LENGTH_SHORT).show();

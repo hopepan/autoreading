@@ -5,6 +5,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 
+import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
@@ -16,10 +17,10 @@ public class AudioRecordFunc {
     private int bufferSizeInBytes = 0;
 
     //AudioName裸音频数据文件 ，麦克风
-    private String AudioName = "";
+    private String audioName = "";
 
     //NewAudioName可播放的音频文件
-    private String NewAudioName = "";
+    private String newAudioName = "";
 
     private AudioRecord audioRecord;
     private boolean isRecord = false;// 设置正在录制的状态
@@ -37,28 +38,22 @@ public class AudioRecordFunc {
         return mInstance;
     }
 
-    public int startRecordAndFile() {
+    public int startRecordAndFile(Context context) {
         //判断是否有外部存储设备sdcard
-        if (AudioFileFunc.isSdcardExit()) {
-            if (isRecord) {
-                return ErrorCode.E_STATE_RECODING;
-            } else {
-                if (audioRecord == null)
-                    creatAudioRecord();
-
-                audioRecord.startRecording();
-                // 让录制状态为true
-                isRecord = true;
-                // 开启音频文件写入线程
-                new Thread(new AudioRecordThread()).start();
-
-                return ErrorCode.SUCCESS;
-            }
-
+        if (isRecord) {
+            return ErrorCode.E_STATE_RECODING;
         } else {
-            return ErrorCode.E_NOSDCARD;
-        }
+            if (audioRecord == null)
+                createAudioRecord(context);
 
+            audioRecord.startRecording();
+            // 让录制状态为true
+            isRecord = true;
+            // 开启音频文件写入线程
+            new Thread(new AudioRecordThread()).start();
+
+            return ErrorCode.SUCCESS;
+        }
     }
 
     public void stopRecordAndFile() {
@@ -67,7 +62,7 @@ public class AudioRecordFunc {
 
 
     public long getRecordFileSize() {
-        return AudioFileFunc.getFileSize(NewAudioName);
+        return AudioFileFunc.getFileSize(newAudioName);
     }
 
 
@@ -82,10 +77,10 @@ public class AudioRecordFunc {
     }
 
 
-    private void creatAudioRecord() {
+    private void createAudioRecord(Context context) {
         // 获取音频文件路径
-        AudioName = AudioFileFunc.getRawFilePath();
-        NewAudioName = AudioFileFunc.getWavFilePath();
+        audioName = AudioFileFunc.getRawFilePath(context);
+        newAudioName = AudioFileFunc.getWavFilePath(context);
 
         // 获得缓冲区字节大小
         bufferSizeInBytes = AudioRecord.getMinBufferSize(AudioFileFunc.AUDIO_SAMPLE_RATE,
@@ -100,7 +95,7 @@ public class AudioRecordFunc {
         @Override
         public void run() {
             writeDateTOFile();//往文件中写入裸数据
-            copyWaveFile(AudioName, NewAudioName);//给裸数据加上头文件
+            copyWaveFile(audioName, newAudioName);//给裸数据加上头文件
         }
     }
 
@@ -115,7 +110,7 @@ public class AudioRecordFunc {
         FileOutputStream fos = null;
         int readsize = 0;
         try {
-            File file = new File(AudioName);
+            File file = new File(audioName);
             if (file.exists()) {
                 file.delete();
             }
@@ -157,7 +152,7 @@ public class AudioRecordFunc {
             out = new FileOutputStream(outFilename);
             totalAudioLen = in.getChannel().size();
             totalDataLen = totalAudioLen + 36;
-            WriteWaveFileHeader(out, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);
+            writeWaveFileHeader(out, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);
             while (in.read(data) != -1) {
                 out.write(data);
             }
@@ -175,7 +170,7 @@ public class AudioRecordFunc {
      * 为我为啥插入这44个字节，这个还真没深入研究，不过你随便打开一个wav
      * 音频的文件，可以发现前面的头文件可以说基本一样哦。每种格式的文件都有自己特有的头文件。
      */
-    private void WriteWaveFileHeader(FileOutputStream out, long totalAudioLen, long totalDataLen, long longSampleRate, int channels, long byteRate) throws IOException {
+    private void writeWaveFileHeader(FileOutputStream out, long totalAudioLen, long totalDataLen, long longSampleRate, int channels, long byteRate) throws IOException {
         byte[] header = new byte[44];
         header[0] = 'R'; // RIFF/WAVE header
         header[1] = 'I';
