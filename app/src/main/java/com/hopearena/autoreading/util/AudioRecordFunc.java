@@ -113,6 +113,8 @@ public class AudioRecordFunc {
             File file = new File(audioName);
             if (file.exists()) {
                 file.delete();
+            } else {
+                file.createNewFile();
             }
             fos = new FileOutputStream(file);
             // 建立一个可存取字节的文件
