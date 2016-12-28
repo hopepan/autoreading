@@ -53,7 +53,7 @@ public class ArticleAddActivity extends AppCompatActivity {
     private Button pauseButton;
     private FloatingActionButton fab;
     private MediaRecorder mediaRecorder;
-    private MediaPlayer mediaPlayer = new MediaPlayer();;
+    private MediaPlayer mediaPlayer = new MediaPlayer();
     private ArticleService articleService = new ArticleServiceImpl();
     private SpeechRecognizer mIat;
     private boolean isRecording = false;
