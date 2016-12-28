@@ -29,6 +29,7 @@ import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
 import com.hopearena.autoreading.util.AudioRecordFunc;
 import com.hopearena.autoreading.util.ErrorCode;
 import com.hopearena.autoreading.util.JsonParser;
+import com.hopearena.autoreading.util.MediaRecordFunc;
 import com.hopearena.autoreading.util.PermissionUtil;
 import com.iflytek.cloud.RecognizerListener;
 import com.iflytek.cloud.RecognizerResult;
@@ -53,7 +54,7 @@ public class ArticleAddActivity extends AppCompatActivity {
     private Button pauseButton;
     private FloatingActionButton fab;
     private MediaRecorder mediaRecorder;
-    private MediaPlayer mediaPlayer = new MediaPlayer();;
+    private MediaPlayer mediaPlayer = new MediaPlayer();
     private ArticleService articleService = new ArticleServiceImpl();
     private SpeechRecognizer mIat;
     private boolean isRecording = false;
@@ -77,7 +78,7 @@ public class ArticleAddActivity extends AppCompatActivity {
                 public void onClick(View view) {
                     if(PermissionUtil.requestPermission(ArticleAddActivity.this,
                             Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-                        recordAudioFile();
+                        recordAudio();
                     }
                 }
             });
@@ -141,6 +142,7 @@ public class ArticleAddActivity extends AppCompatActivity {
                 BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_btn_speak_now));
     }
 
+    @Deprecated
     private void recordAudioFile() {
         int ret =  AudioRecordFunc.getInstance().startRecordAndFile(this.getApplicationContext());
         if(ErrorCode.E_STATE_RECODING == ret) {
@@ -151,15 +153,32 @@ public class ArticleAddActivity extends AppCompatActivity {
         }
     }
 
-    @Deprecated
     private void recordAudio() {
-        if(isRecording) {
-            stopRecording();
+        if(MediaRecordFunc.getInstance().isRecording()) {
+            MediaRecordFunc.getInstance().stopRecording();
+            fab.setImageDrawable(STOP_DRAWABLE);
         } else {
-            if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-                startRecording();
+            File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
+            if (!fpath.exists()) {
+                fpath.mkdirs();
             }
+            try {
+                 MediaRecordFunc.getInstance().startRecording(fpath + "/test.3gp");
+            } catch (IOException e) {
+                e.printStackTrace();
+                Snackbar.make(findViewById(R.id.add_main_clayout),
+                        e.getMessage(),
+                        Snackbar.LENGTH_SHORT).show();
+            }
+            fab.setImageDrawable(RECORDING_DRAWABLE);
         }
+//        if(isRecording) {
+//            stopRecording();
+//        } else {
+//            if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+//                startRecording();
+//            }
+//        }
     }
 
     //http://blog.csdn.net/imhxl/article/details/50854146
@@ -306,7 +325,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (requestCode == PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 //                startRecording();
-                recordAudioFile();
+                recordAudio();
             } else {
                 // Permission Denied
                 Snackbar.make(findViewById(R.id.add_main_clayout), "您没有授权该权限，请在设置中打开授权", Snackbar.LENGTH_SHORT).show();
