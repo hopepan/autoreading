@@ -9,7 +9,7 @@ public class MediaRecordFunc {
 
     private static MediaRecordFunc mInstance;
 
-    private MediaRecorder mediaRecorder;
+    private MediaRecorder  mediaRecorder = new MediaRecorder();
 
     private boolean isRecording;
 
@@ -21,11 +21,12 @@ public class MediaRecordFunc {
 
     public void startRecording(String fileName) throws IOException {
 
-        mediaRecorder = new MediaRecorder();
+        mediaRecorder.reset();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        mediaRecorder.setOutputFile(fileName);
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+        mediaRecorder.setOutputFile(fileName);
+        mediaRecorder.setMaxDuration(20000);
         mediaRecorder.prepare();
         mediaRecorder.start();
         isRecording = true;

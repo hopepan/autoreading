@@ -78,7 +78,7 @@ public class ArticleAddActivity extends AppCompatActivity {
                 public void onClick(View view) {
                     if(PermissionUtil.requestPermission(ArticleAddActivity.this,
                             Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-                        recordAudio();
+                        recordAudioFile();
                     }
                 }
             });
@@ -142,7 +142,6 @@ public class ArticleAddActivity extends AppCompatActivity {
                 BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_btn_speak_now));
     }
 
-    @Deprecated
     private void recordAudioFile() {
         int ret =  AudioRecordFunc.getInstance().startRecordAndFile(this.getApplicationContext());
         if(ErrorCode.E_STATE_RECODING == ret) {
@@ -163,7 +162,7 @@ public class ArticleAddActivity extends AppCompatActivity {
                 fpath.mkdirs();
             }
             try {
-                 MediaRecordFunc.getInstance().startRecording(fpath + "/test.3gp");
+                 MediaRecordFunc.getInstance().startRecording(fpath + "/test.wav");
             } catch (IOException e) {
                 e.printStackTrace();
                 Snackbar.make(findViewById(R.id.add_main_clayout),
@@ -325,7 +324,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (requestCode == PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 //                startRecording();
-                recordAudio();
+                recordAudioFile();
             } else {
                 // Permission Denied
                 Snackbar.make(findViewById(R.id.add_main_clayout), "您没有授权该权限，请在设置中打开授权", Snackbar.LENGTH_SHORT).show();
