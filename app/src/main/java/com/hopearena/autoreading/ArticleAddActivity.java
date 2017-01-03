@@ -8,6 +8,9 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.AudioFormat;
+import android.media.AudioManager;
+import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.os.Bundle;
@@ -38,6 +41,7 @@ import com.iflytek.cloud.SpeechRecognizer;
 import com.iflytek.cloud.SpeechUtility;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -57,6 +61,13 @@ public class ArticleAddActivity extends AppCompatActivity {
     private ArticleService articleService = new ArticleServiceImpl();
     private SpeechRecognizer mIat;
     private boolean isRecording = false;
+
+
+    private final static String tag="22";
+    static byte[] buffer=null;
+    AudioTrack at=null;
+    int pcmlen=0;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,28 +109,53 @@ public class ArticleAddActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
+                FileInputStream fis = new FileInputStream(file);
+                buffer=new byte[1024*1024*2];//2M
                 try {
-                    mediaPlayer = new MediaPlayer();
-                    File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
-                    if (!fpath.exists()) {
-                        fpath.mkdirs();
-                    }
-                    mediaPlayer.setDataSource(fpath + "/test.3gp");
-                    mediaPlayer.prepare();
-                    mediaPlayer.start();
-                } catch (IllegalArgumentException e) {
-                    e.printStackTrace();
-                } catch (IllegalStateException e) {
-                    e.printStackTrace();
+                    int len=fis.read(buffer);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
-                    @Override
-                    public void onCompletion(MediaPlayer mp) {
-                        mp.release();
-                    }
-                });
+                pcmlen=0;
+                pcmlen+=buffer[0x2b];
+                pcmlen=pcmlen*256+buffer[0x2a];
+                pcmlen=pcmlen*256+buffer[0x29];
+                pcmlen=pcmlen*256+buffer[0x28];
+
+                int channel=buffer[0x17];
+                channel=channel*256+buffer[0x16];
+
+                int bits=buffer[0x23];
+                bits=bits*256+buffer[0x22];
+                at = new AudioTrack(AudioManager.STREAM_MUSIC, 44100,
+                        channel,
+                        AudioFormat.ENCODING_PCM_16BIT,
+                        pcmlen,
+                        AudioTrack.MODE_STATIC);
+                at.write(buffer, 0x2C, pcmlen);
+                at.play();
+//                try {
+//                    mediaPlayer = new MediaPlayer();
+//                    File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
+//                    if (!fpath.exists()) {
+//                        fpath.mkdirs();
+//                    }
+//                    mediaPlayer.setDataSource(fpath + "/test.3gp");
+//                    mediaPlayer.prepare();
+//                    mediaPlayer.start();
+//                } catch (IllegalArgumentException e) {
+//                    e.printStackTrace();
+//                } catch (IllegalStateException e) {
+//                    e.printStackTrace();
+//                } catch (IOException e) {
+//                    e.printStackTrace();
+//                }
+//                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
+//                    @Override
+//                    public void onCompletion(MediaPlayer mp) {
+//                        mp.release();
+//                    }
+//                });
             }
         });
         pauseButton = (Button) findViewById(R.id.pause_button);
@@ -142,23 +178,16 @@ public class ArticleAddActivity extends AppCompatActivity {
     }
 
     private void recordAudioFile() {
-        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(this.getApplicationContext());
+        File fpath = new File(this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
+        if (!fpath.exists()) {
+            fpath.mkdirs();
+        }
+        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(fpath+"test");
         if(ErrorCode.E_STATE_RECODING == ret) {
             AudioRecordFunc.getInstance().stopRecordAndFile();
             fab.setImageDrawable(STOP_DRAWABLE);
         } else if(ErrorCode.SUCCESS == ret) {
             fab.setImageDrawable(RECORDING_DRAWABLE);
-        }
-    }
-
-    @Deprecated
-    private void recordAudio() {
-        if(isRecording) {
-            stopRecording();
-        } else {
-            if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-                startRecording();
-            }
         }
     }
 
@@ -227,55 +256,6 @@ public class ArticleAddActivity extends AppCompatActivity {
     }
 
     /**
-     * Showing google speech input dialog
-     * */
-    @Deprecated
-    private void promptSpeechInput() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                getString(R.string.speech_prompt));
-        startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
-        if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-            startRecording();
-        }
-    }
-
-    @Deprecated
-    private void startRecording(){
-        mediaRecorder = new MediaRecorder();
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        File fpath = new File(this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
-        if (!fpath.exists()) {
-            fpath.mkdirs();
-        }
-        mediaRecorder.setOutputFile(fpath + "/test.3gp");
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-        try {
-            mediaRecorder.prepare();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        mediaRecorder.start();
-        isRecording = true;
-        System.out.println("done");
-
-    }
-
-    @Deprecated
-    private void stopRecording() {
-        mediaRecorder.stop();
-        mediaRecorder.release();
-        isRecording = false;
-    }
-
-    /**
      * Receiving speech input
      * */
     @Override
@@ -341,5 +321,66 @@ public class ArticleAddActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.add_menu_item, menu);
         return super.onCreateOptionsMenu(menu);
+    }
+
+
+    @Deprecated
+    private void recordAudio() {
+        if(isRecording) {
+            stopRecording();
+        } else {
+            if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+                startRecording();
+            }
+        }
+    }
+
+    /**
+     * Showing google speech input dialog
+     * */
+    @Deprecated
+    private void promptSpeechInput() {
+        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
+                getString(R.string.speech_prompt));
+        startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
+        if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+            startRecording();
+        }
+    }
+
+    @Deprecated
+    private void startRecording(){
+        mediaRecorder = new MediaRecorder();
+        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        File fpath = new File(this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
+        if (!fpath.exists()) {
+            fpath.mkdirs();
+        }
+        mediaRecorder.setOutputFile(fpath + "/test.3gp");
+        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+        try {
+            mediaRecorder.prepare();
+        } catch (IllegalStateException e) {
+            e.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        mediaRecorder.start();
+        isRecording = true;
+        System.out.println("done");
+
+    }
+
+    @Deprecated
+    private void stopRecording() {
+        mediaRecorder.stop();
+        mediaRecorder.release();
+        isRecording = false;
     }
 }

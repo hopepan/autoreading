@@ -38,13 +38,13 @@ public class AudioRecordFunc {
         return mInstance;
     }
 
-    public int startRecordAndFile(Context context) {
+    public int startRecordAndFile(String filePath) {
         //判断是否有外部存储设备sdcard
         if (isRecord) {
             return ErrorCode.E_STATE_RECODING;
         } else {
             if (audioRecord == null)
-                createAudioRecord(context);
+                createAudioRecord(filePath);
 
             audioRecord.startRecording();
             // 让录制状态为true
@@ -77,10 +77,10 @@ public class AudioRecordFunc {
     }
 
 
-    private void createAudioRecord(Context context) {
+    private void createAudioRecord(String filePath) {
         // 获取音频文件路径
-        audioName = AudioFileFunc.getRawFilePath(context);
-        newAudioName = AudioFileFunc.getWavFilePath(context);
+        audioName = filePath + ".raw";
+        newAudioName = filePath + ".wav";
 
         // 获得缓冲区字节大小
         bufferSizeInBytes = AudioRecord.getMinBufferSize(AudioFileFunc.AUDIO_SAMPLE_RATE,
