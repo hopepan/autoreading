@@ -1,50 +1,44 @@
 package com.hopearena.autoreading.util;
 
-import android.content.Context;
 import android.media.MediaRecorder;
 
-import java.io.File;
 import java.io.IOException;
 
 
 public class MediaRecordFunc {
 
-    private MediaRecorder mediaRecorder;
+    private static MediaRecordFunc mInstance;
+
+    private MediaRecorder  mediaRecorder = new MediaRecorder();
 
     private boolean isRecording;
 
-    public boolean startRecording(File fpath){
+    public synchronized static MediaRecordFunc getInstance() {
+        if (mInstance == null)
+            mInstance = new MediaRecordFunc();
+        return mInstance;
+    }
 
-        mediaRecorder = new MediaRecorder();
+    public void startRecording(String fileName) throws IOException {
+
+        mediaRecorder.reset();
         mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
         mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        if (!fpath.exists()) {
-            fpath.mkdirs();
-        }
-        mediaRecorder.setOutputFile(fpath + "/test.3gp");
         mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-        try {
-            mediaRecorder.prepare();
-            mediaRecorder.start();
-            isRecording = true;
-        } catch (IllegalStateException e) {
-            isRecording = false;
-            e.printStackTrace();
-        } catch (IOException e) {
-            isRecording = false;
-            e.printStackTrace();
-        }
-        return isRecording;
+        mediaRecorder.setOutputFile(fileName);
+        mediaRecorder.setMaxDuration(20000);
+        mediaRecorder.prepare();
+        mediaRecorder.start();
+        isRecording = true;
     }
 
     public void stopRecording() {
-        if(isRecording) {
-            mediaRecorder.stop();
-            mediaRecorder.release();
-            isRecording = false;
-        }
+        mediaRecorder.stop();
+        mediaRecorder.release();
+        isRecording = false;
     }
 
-
+    public boolean isRecording() {
+        return isRecording;
+    }
 }
