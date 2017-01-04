@@ -88,7 +88,7 @@ public class AudioRecordFunc {
 
 
         // 创建AudioRecord对象（修改处）
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, 16000, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, AudioFileFunc.AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_MONO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
     }
 
     class AudioRecordThread implements Runnable {
