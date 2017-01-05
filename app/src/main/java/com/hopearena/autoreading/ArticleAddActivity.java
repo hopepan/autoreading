@@ -10,6 +10,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.media.AudioFormat;
 import android.media.AudioManager;
+import android.media.AudioRecord;
 import android.media.AudioTrack;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
@@ -44,9 +45,13 @@ import com.iflytek.cloud.SpeechRecognizer;
 import com.iflytek.cloud.SpeechUtility;
 
 import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -69,6 +74,11 @@ public class ArticleAddActivity extends AppCompatActivity {
     private boolean isRecording = false;
     private AudioTrack track;
 
+    private AudioRecord mAudioRecord;
+    private short[] mAudioRecordData;
+    private short[] mAudioTrackData;
+    private File mAudioFile;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -77,6 +87,8 @@ public class ArticleAddActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         txtSpeechInput = (EditText) findViewById(R.id.add_content);
+
+        init();
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         PackageManager pm = getPackageManager();
@@ -131,42 +143,36 @@ public class ArticleAddActivity extends AppCompatActivity {
 //                        mp.release();
 //                    }
 //                });
-                File file = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audiotest.wav");
-                int musicLength = (int)(file.length()/2);
-                short[] music = new short[musicLength];
-
-
-                try {
-// Create a DataInputStream to read the audio data back from the saved file.
-                    InputStream is = new FileInputStream(file);
-                    BufferedInputStream bis = new BufferedInputStream(is);
-                    DataInputStream dis = new DataInputStream(bis);
-
-// Read the file into the music array.
-                    int i = 0;
-                    while (dis.available() > 0) {
-                        music[musicLength-1-i] = dis.readShort();
-                        i++;
+                new Thread(new Runnable() {
+                    public void run() {
+                        try {
+                            track.play();
+                            DataInputStream dis = new DataInputStream(
+                                    new BufferedInputStream(
+                                            new FileInputStream(mAudioFile)));
+                            Log.d("TAG", "dis.available=" + dis.available());
+                            while (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING
+                                    && dis.available() > 0) {
+                                int i = 0;
+                                while (dis.available() > 0
+                                        && i < mAudioTrackData.length) {
+                                    mAudioTrackData[i] = dis.readShort();
+                                    i++;
+                                }
+                                wipe(mAudioTrackData, 0, mAudioTrackData.length);
+                                track.write(mAudioTrackData, 0,
+                                        mAudioTrackData.length);
+                            }
+                            track.stop();
+                            dis.close();
+                            Log.d("TAG", "dis.close()");
+                        } catch (FileNotFoundException e) {
+                            e.printStackTrace();
+                        } catch (IOException e) {
+                            e.printStackTrace();
+                        }
                     }
-
-// Close the input streams.
-                    dis.close();
-                    // Create a new AudioTrack object using the same parameters as the AudioRecord
-// object used to create the file.
-                    track = new AudioTrack(AudioManager.STREAM_MUSIC,
-                            11025,
-                            AudioFormat.CHANNEL_OUT_MONO,
-                            AudioFormat.ENCODING_PCM_16BIT,
-                            musicLength,
-                            AudioTrack.MODE_STREAM);
-// Start playback
-                    track.play();
-
-// Write the music buffer to the AudioTrack object
-                    track.write(music, 0, musicLength);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                }).start();
             }
         });
         pauseButton = (Button) findViewById(R.id.pause_button);
@@ -189,18 +195,95 @@ public class ArticleAddActivity extends AppCompatActivity {
                 BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_btn_speak_now));
     }
 
+    private void wipe(short[] lin, int off, int len) {
+        int i, j;
+        for (i = 0; i < len; i++) {
+            j = lin[i + off];
+            lin[i + off] = (short) (j >> 2);
+        }
+    }
+
+    private void init() {
+
+        mAudioFile = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audiotest.wav");
+
+        try {
+            int sampleRateInHz = 44100;
+            int recordBufferSizeInBytes = AudioRecord.getMinBufferSize(
+                    sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT);
+            Log.d("TAG", "recordBufferSizeInBytes=" + recordBufferSizeInBytes);
+            mAudioRecordData = new short[recordBufferSizeInBytes];
+            mAudioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                    sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT, recordBufferSizeInBytes);
+
+            int trackBufferSizeInBytes = AudioRecord.getMinBufferSize(
+                    sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT);
+            mAudioTrackData = new short[trackBufferSizeInBytes];
+            track = new AudioTrack(AudioManager.STREAM_MUSIC,
+                    sampleRateInHz, AudioFormat.CHANNEL_OUT_MONO,
+                    AudioFormat.ENCODING_PCM_16BIT, trackBufferSizeInBytes,
+                    AudioTrack.MODE_STREAM);
+        } catch (IllegalArgumentException e) {
+            e.printStackTrace();
+        }
+
+    }
+
     private void recordAudioFile() {
         File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
         if (!fpath.exists()) {
             fpath.mkdirs();
         }
-        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(fpath + "test");
-        if(ErrorCode.E_STATE_RECODING == ret) {
-            AudioRecordFunc.getInstance().stopRecordAndFile();
-            fab.setImageDrawable(STOP_DRAWABLE);
-        } else if(ErrorCode.SUCCESS == ret) {
-            fab.setImageDrawable(RECORDING_DRAWABLE);
+        if(isRecording) {
+            if (mAudioRecord != null
+                    && mAudioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                mAudioRecord.stop();
+                isRecording = false;
+                fab.setImageDrawable(STOP_DRAWABLE);
+            }
+        } else {
+            new Thread(new Runnable() {
+                public void run() {
+                    try {
+                        mAudioRecord.startRecording();
+                        DataOutputStream dos = new DataOutputStream(
+                                new BufferedOutputStream(
+                                        new FileOutputStream(mAudioFile)));
+                        while (mAudioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
+                            int number = mAudioRecord.read(
+                                    mAudioRecordData, 0,
+                                    mAudioRecordData.length);
+                            for (int i = 0; i < number; i++) {
+                                dos.writeShort(mAudioRecordData[i]);
+                            }
+                            if (AudioRecord.ERROR_BAD_VALUE != number
+                                    && AudioRecord.ERROR != number) {
+                                Log.d("TAG", String.valueOf(number));
+                            }
+                        }
+                        dos.flush();
+                        dos.close();
+                        Log.d("TAG", "dos.close()");
+                        isRecording = true;
+                        fab.setImageDrawable(RECORDING_DRAWABLE);
+                    } catch (FileNotFoundException e) {
+                        e.printStackTrace();
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
         }
+//        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(fpath + "test");
+//        if(ErrorCode.E_STATE_RECODING == ret) {
+//            AudioRecordFunc.getInstance().stopRecordAndFile();
+//            fab.setImageDrawable(STOP_DRAWABLE);
+//        } else if(ErrorCode.SUCCESS == ret) {
+//            fab.setImageDrawable(RECORDING_DRAWABLE);
+//        }
     }
 
 
