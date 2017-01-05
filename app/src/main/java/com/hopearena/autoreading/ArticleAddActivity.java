@@ -164,8 +164,6 @@ public class ArticleAddActivity extends AppCompatActivity {
 
 // Write the music buffer to the AudioTrack object
                     track.write(music, 0, musicLength);
-
-
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
