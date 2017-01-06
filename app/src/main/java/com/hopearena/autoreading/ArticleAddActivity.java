@@ -205,14 +205,26 @@ public class ArticleAddActivity extends AppCompatActivity {
 
     private void init() {
 
-        mAudioFile = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audiotest.wav");
+        File path = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/");
+        if(!path.exists()) {
+            path.mkdirs();
+        }
+        mAudioFile = new File(path.getAbsolutePath() + "/audiotest.pcm");
+        if (mAudioFile.exists()) {
+            mAudioFile.delete();
+        } else {
+            try {
+                mAudioFile.createNewFile();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
 
         try {
             int sampleRateInHz = 44100;
             int recordBufferSizeInBytes = AudioRecord.getMinBufferSize(
                     sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT);
-            Log.d("TAG", "recordBufferSizeInBytes=" + recordBufferSizeInBytes);
             mAudioRecordData = new short[recordBufferSizeInBytes];
             mAudioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
                     sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
@@ -237,14 +249,25 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (!fpath.exists()) {
             fpath.mkdirs();
         }
+        System.out.println("isrecord>>"+isRecording);
         if(isRecording) {
             if (mAudioRecord != null
                     && mAudioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
                 mAudioRecord.stop();
                 isRecording = false;
                 fab.setImageDrawable(STOP_DRAWABLE);
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        System.out.println("run");
+                        translateAudio();
+                        System.out.println("run1");
+                    }
+                }).start();
             }
         } else {
+            fab.setImageDrawable(RECORDING_DRAWABLE);
+            isRecording = true;
             new Thread(new Runnable() {
                 public void run() {
                     try {
@@ -259,20 +282,21 @@ public class ArticleAddActivity extends AppCompatActivity {
                             for (int i = 0; i < number; i++) {
                                 dos.writeShort(mAudioRecordData[i]);
                             }
-                            if (AudioRecord.ERROR_BAD_VALUE != number
-                                    && AudioRecord.ERROR != number) {
-                                Log.d("TAG", String.valueOf(number));
-                            }
+//                            if (AudioRecord.ERROR_BAD_VALUE != number
+//                                    && AudioRecord.ERROR != number) {
+//                                System.out.println("in");
+//                            }
                         }
                         dos.flush();
                         dos.close();
-                        Log.d("TAG", "dos.close()");
-                        isRecording = true;
-                        fab.setImageDrawable(RECORDING_DRAWABLE);
                     } catch (FileNotFoundException e) {
                         e.printStackTrace();
+                        isRecording = false;
+                        fab.setImageDrawable(STOP_DRAWABLE);
                     } catch (IOException e) {
                         e.printStackTrace();
+                        isRecording = false;
+                        fab.setImageDrawable(STOP_DRAWABLE);
                     }
                 }
             }).start();
@@ -299,11 +323,11 @@ public class ArticleAddActivity extends AppCompatActivity {
         mIat.setParameter(SpeechConstant.ACCENT, "mandarin");
         mIat.setParameter(SpeechConstant.ENGINE_TYPE, "cloud");
         mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
-        mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
+        mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "pcm");
         //在传文件路径方式（-2）下，SDK通过应用层设置的ASR_SOURCE_PATH值， 直接读取音频文件。目前仅在SpeechRecognizer中支持。
-        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-1");
+        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-2");
         //保存音频文件的路径   仅支持pcm和wav
-        mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/test.wav");
+        mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, mAudioFile.getAbsolutePath());
 
         int ret = mIat.startListening(new RecognizerListener() {
             @Override
