@@ -186,7 +186,7 @@ public class ArticleAddActivity extends AppCompatActivity {
             }
         });
 
-        SpeechUtility.createUtility(this, "appid=583ba0a6");
+        SpeechUtility.createUtility(this, SpeechConstant.APPID +"=583ba0a6," + SpeechConstant.FORCE_LOGIN +"=true");
         mIat = SpeechRecognizer.createRecognizer(this, null);
 
         RECORDING_DRAWABLE = new BitmapDrawable(getResources(),
@@ -321,7 +321,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         //四川话：lmz
         //河南话：henanese
         mIat.setParameter(SpeechConstant.ACCENT, "mandarin");
-        mIat.setParameter(SpeechConstant.ENGINE_TYPE, "cloud");
+        mIat.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD);
         mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
         mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "pcm");
         //在传文件路径方式（-2）下，SDK通过应用层设置的ASR_SOURCE_PATH值， 直接读取音频文件。目前仅在SpeechRecognizer中支持。
@@ -373,6 +373,24 @@ public class ArticleAddActivity extends AppCompatActivity {
 
             }
         });
+
+        if (ret != ErrorCode.SUCCESS) {
+            System.out.println("识别失败,错误码：" + ret);
+        } else {
+            byte[] audioData = FucUtil.readAudioFile(this, "iattest.wav");
+
+            if (null != audioData) {
+                // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），位长16bit，单声道的wav或者pcm
+                // 写入8KHz采样的音频时，必须先调用setParameter(SpeechConstant.SAMPLE_RATE, "8000")设置正确的采样率
+                // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
+                // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
+                mIat.writeAudio(audioData, 0, audioData.length);
+                mIat.stopListening();
+            } else {
+                mIat.cancel();
+                System.out.println("读取音频流失败");
+            }
+        }
     }
 
     /**
