@@ -218,7 +218,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         }
 
         try {
-            int sampleRateInHz = 8000;//44100;
+            int sampleRateInHz = 16000;//44100;
             int recordBufferSizeInBytes = AudioRecord.getMinBufferSize(
                     sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
                     AudioFormat.ENCODING_PCM_16BIT);
@@ -321,9 +321,18 @@ public class ArticleAddActivity extends AppCompatActivity {
         mIat.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD);
         mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
         mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "pcm");
+        mIat.setParameter(SpeechConstant.SAMPLE_RATE, "16000");
+        // 设置语音前端点:静音超时时间，即用户多长时间不说话则当做超时处理
+        mIat.setParameter(SpeechConstant.VAD_BOS, "4000");
+
+        // 设置语音后端点:后端点静音检测时间，即用户停止说话多长时间内即认为不再输入， 自动停止录音
+        mIat.setParameter(SpeechConstant.VAD_EOS, "1000");
+
+        // 设置标点符号,设置为"0"返回结果无标点,设置为"1"返回结果有标点
+        mIat.setParameter(SpeechConstant.ASR_PTT, "1");
         //保存音频文件的路径   仅支持pcm和wav
         System.out.println("path>>"+mAudioFile.getAbsolutePath());
-        mIat.setParameter(SpeechConstant.ASR_AUDIO_PATH, mAudioFile.getAbsolutePath());
+//        mIat.setParameter(SpeechConstant.ASR_AUDIO_PATH, mAudioFile.getAbsolutePath());
         //在传文件路径方式（-2）下，SDK通过应用层设置的ASR_SOURCE_PATH值， 直接读取音频文件。目前仅在SpeechRecognizer中支持。
         mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-2");
         mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, mAudioFile.getAbsolutePath());
@@ -376,15 +385,15 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (ret != com.iflytek.cloud.ErrorCode.SUCCESS) {
             System.out.println("识别失败,错误码：" + ret);
         } else {
-            byte[] audioData = FucUtil.readAudioFile(this, "/data/iattest.wav");
-            System.out.println("len>>"+audioData.length);
-
+//            byte[] audioData = FucUtil.readAudioFile(this, "/data/audiotest.pcm");
+//            System.out.println("len>>"+audioData.length);
+//
 //            if (null != audioData) {
 //                // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），位长16bit，单声道的wav或者pcm
 //                // 写入8KHz采样的音频时，必须先调用setParameter(SpeechConstant.SAMPLE_RATE, "8000")设置正确的采样率
 //                // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
 //                // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
-//                mIat.writeAudio(audioData, 0, audioData.length);
+////                mIat.writeAudio(audioData, 0, audioData.length);
 //                mIat.stopListening();
 //            } else {
 //                mIat.cancel();
