@@ -42,6 +42,9 @@ import com.iflytek.cloud.SpeechError;
 import com.iflytek.cloud.SpeechRecognizer;
 import com.iflytek.cloud.SpeechUtility;
 
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
@@ -52,6 +55,8 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 
@@ -75,6 +80,8 @@ public class ArticleAddActivity extends AppCompatActivity {
     private short[] mAudioRecordData;
     private short[] mAudioTrackData;
     private File mAudioFile;
+
+    private HashMap<String, String> mIatResults = new LinkedHashMap<String, String>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -190,6 +197,9 @@ public class ArticleAddActivity extends AppCompatActivity {
                 BitmapFactory.decodeResource(getResources(), android.R.drawable.presence_video_busy));
         STOP_DRAWABLE = new BitmapDrawable(getResources(),
                 BitmapFactory.decodeResource(getResources(), android.R.drawable.ic_btn_speak_now));
+
+        mIatResults.clear();
+        txtSpeechInput.setText(null);
     }
 
     private void wipe(short[] lin, int off, int len) {
@@ -325,7 +335,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         //只有设置这个属性为1时,VAD_BOS  VAD_EOS才会生效,且RecognizerListener.onVolumeChanged才有音量返回默认：1
         mIat.setParameter(SpeechConstant.VAD_ENABLE,"1");
         // 设置语音前端点:静音超时时间，即用户多长时间不说话则当做超时处理
-        mIat.setParameter(SpeechConstant.VAD_BOS, "2000");
+        mIat.setParameter(SpeechConstant.VAD_BOS, "1000");
 
         // 设置语音后端点:后端点静音检测时间，即用户停止说话多长时间内即认为不再输入， 自动停止录音
         mIat.setParameter(SpeechConstant.VAD_EOS, "1000");
@@ -335,8 +345,8 @@ public class ArticleAddActivity extends AppCompatActivity {
         //保存音频文件的路径   仅支持pcm和wav
 //        mIat.setParameter(SpeechConstant.ASR_AUDIO_PATH, mAudioFile.getAbsolutePath());
         //在传文件路径方式（-2）下，SDK通过应用层设置的ASR_SOURCE_PATH值， 直接读取音频文件。目前仅在SpeechRecognizer中支持。
-        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-2");
-        mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, mAudioFile.getAbsolutePath());
+        mIat.setParameter(SpeechConstant.AUDIO_SOURCE, "-1");
+//        mIat.setParameter(SpeechConstant.ASR_SOURCE_PATH, mAudioFile.getAbsolutePath());
 
         int ret = mIat.startListening(new RecognizerListener() {
             @Override
@@ -363,9 +373,12 @@ public class ArticleAddActivity extends AppCompatActivity {
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean b) {
                 String str = JsonParser.parseIatResult(recognizerResult.getResultString());
-                Snackbar.make(findViewById(R.id.add_main_clayout),
-                        str,
-                        Snackbar.LENGTH_SHORT).show();
+//                Snackbar.make(findViewById(R.id.add_main_clayout),
+//                        str,
+//                        Snackbar.LENGTH_SHORT).show();
+                String resultString = txtSpeechInput.getText().toString();
+                resultString += getResult(recognizerResult);
+                txtSpeechInput.setText(resultString);
                 System.out.println("识别结果"+str);
             }
 
@@ -386,21 +399,52 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (ret != com.iflytek.cloud.ErrorCode.SUCCESS) {
             System.out.println("识别失败,错误码：" + ret);
         } else {
-//            byte[] audioData = FucUtil.readAudioFile(this, "/data/audiotest.pcm");
-//            System.out.println("len>>"+audioData.length);
-//
-//            if (null != audioData) {
-//                // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），位长16bit，单声道的wav或者pcm
-//                // 写入8KHz采样的音频时，必须先调用setParameter(SpeechConstant.SAMPLE_RATE, "8000")设置正确的采样率
-//                // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
-//                // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
-//                mIat.writeAudio(audioData, 0, audioData.length);
-//                mIat.stopListening();
-//            } else {
-//                mIat.cancel();
-//                System.out.println("读取音频流失败");
-//            }
+            byte[] audioData = FucUtil.readAudioFile(this, "/data/audiotest.pcm");
+            System.out.println("len>>"+audioData.length);
+
+            if (null != audioData) {
+                // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），位长16bit，单声道的wav或者pcm
+                // 写入8KHz采样的音频时，必须先调用setParameter(SpeechConstant.SAMPLE_RATE, "8000")设置正确的采样率
+                // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
+                // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
+                //voiceBuffer为音频数据流，splitBuffer为自定义分割接口，将其以4.8k字节分割成数组
+                ArrayList<byte[]> buffers = FucUtil.splitBuffer(audioData,audioData.length, 4800);
+                for (int i = 0; i < buffers.size(); i++) {
+                    mIat.writeAudio(buffers.get(i), 0, buffers.get(i).length);
+                    try {
+                        Thread.sleep(150);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                mIat.stopListening();
+            } else {
+                mIat.cancel();
+                System.out.println("读取音频流失败");
+            }
         }
+    }
+
+    private String getResult(RecognizerResult results) {
+        String text = JsonParser.parseIatResult(results.getResultString());
+
+        String sn = null;
+        // 读取json结果中的sn字段
+        try {
+            JSONObject resultJson = new JSONObject(results.getResultString());
+            sn = resultJson.optString("sn");
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        mIatResults.put(sn, text);
+
+        StringBuffer resultBuffer = new StringBuffer();
+        for (String key : mIatResults.keySet()) {
+            resultBuffer.append(mIatResults.get(key));
+        }
+
+        return resultBuffer.toString();
     }
 
     /**
