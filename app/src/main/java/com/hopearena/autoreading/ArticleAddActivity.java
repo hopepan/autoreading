@@ -335,7 +335,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         //只有设置这个属性为1时,VAD_BOS  VAD_EOS才会生效,且RecognizerListener.onVolumeChanged才有音量返回默认：1
         mIat.setParameter(SpeechConstant.VAD_ENABLE,"1");
         // 设置语音前端点:静音超时时间，即用户多长时间不说话则当做超时处理
-        mIat.setParameter(SpeechConstant.VAD_BOS, "1000");
+        mIat.setParameter(SpeechConstant.VAD_BOS, "4000");
 
         // 设置语音后端点:后端点静音检测时间，即用户停止说话多长时间内即认为不再输入， 自动停止录音
         mIat.setParameter(SpeechConstant.VAD_EOS, "1000");
@@ -372,14 +372,14 @@ public class ArticleAddActivity extends AppCompatActivity {
 
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean b) {
-                String str = JsonParser.parseIatResult(recognizerResult.getResultString());
+//                String str = JsonParser.parseIatResult(recognizerResult.getResultString());
 //                Snackbar.make(findViewById(R.id.add_main_clayout),
 //                        str,
 //                        Snackbar.LENGTH_SHORT).show();
                 String resultString = txtSpeechInput.getText().toString();
                 resultString += getResult(recognizerResult);
                 txtSpeechInput.setText(resultString);
-                System.out.println("识别结果"+str);
+                System.out.println("识别结果"+resultString);
             }
 
             @Override
@@ -408,11 +408,11 @@ public class ArticleAddActivity extends AppCompatActivity {
                 // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
                 // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
                 //voiceBuffer为音频数据流，splitBuffer为自定义分割接口，将其以4.8k字节分割成数组
-                ArrayList<byte[]> buffers = FucUtil.splitBuffer(audioData,audioData.length, 4800);
+                ArrayList<byte[]> buffers = FucUtil.splitBuffer(audioData,audioData.length, 48000);
                 for (int i = 0; i < buffers.size(); i++) {
                     mIat.writeAudio(buffers.get(i), 0, buffers.get(i).length);
                     try {
-                        Thread.sleep(150);
+                        Thread.sleep(100);
                     } catch (InterruptedException e) {
                         e.printStackTrace();
                     }
