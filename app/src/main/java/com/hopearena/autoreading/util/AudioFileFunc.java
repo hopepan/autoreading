@@ -11,7 +11,7 @@ public class AudioFileFunc {
 
     //采用频率
     //44100是目前的标准，但是某些设备仍然支持22050，16000，11025
-    public final static int AUDIO_SAMPLE_RATE = 44100;  //44.1KHz,普遍使用的频率
+    public final static int AUDIO_SAMPLE_RATE = 8000;  //44.1KHz,普遍使用的频率
     //录音输出文件
     private final static String AUDIO_RAW_FILENAME = "/data/audio/test.raw";
     private final static String AUDIO_WAV_FILENAME = "/data/audio/finalAudio.wav";

@@ -30,6 +30,9 @@ import android.widget.EditText;
 
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
+import com.hopearena.autoreading.util.AudioFileFunc;
+import com.hopearena.autoreading.util.AudioRecordFunc;
+import com.hopearena.autoreading.util.AudioTrackFunc;
 import com.hopearena.autoreading.util.ErrorCode;
 import com.hopearena.autoreading.util.FucUtil;
 import com.hopearena.autoreading.util.JsonParser;
@@ -41,6 +44,7 @@ import com.iflytek.cloud.SpeechConstant;
 import com.iflytek.cloud.SpeechError;
 import com.iflytek.cloud.SpeechRecognizer;
 import com.iflytek.cloud.SpeechUtility;
+import com.iflytek.cloud.ui.RecognizerDialog;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -64,22 +68,15 @@ public class ArticleAddActivity extends AppCompatActivity {
 
     private Drawable RECORDING_DRAWABLE;
     private Drawable STOP_DRAWABLE;
-    private final int REQ_CODE_SPEECH_INPUT = 100;
     private EditText txtSpeechInput;
     private Button playButton;
     private Button pauseButton;
     private FloatingActionButton fab;
-    private MediaRecorder mediaRecorder;
-    private MediaPlayer mediaPlayer = new MediaPlayer();
     private ArticleService articleService = new ArticleServiceImpl();
     private SpeechRecognizer mIat;
     private boolean isRecording = false;
     private AudioTrack track;
 
-    private AudioRecord mAudioRecord;
-    private short[] mAudioRecordData;
-    private short[] mAudioTrackData;
-    private File mAudioFile;
 
     private HashMap<String, String> mIatResults = new LinkedHashMap<String, String>();
 
@@ -91,8 +88,6 @@ public class ArticleAddActivity extends AppCompatActivity {
         setSupportActionBar(toolbar);
 
         txtSpeechInput = (EditText) findViewById(R.id.add_content);
-
-        init();
 
         fab = (FloatingActionButton) findViewById(R.id.fab);
         PackageManager pm = getPackageManager();
@@ -125,68 +120,14 @@ public class ArticleAddActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-//                try {
-//                    mediaPlayer = new MediaPlayer();
-//                    File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
-//                    if (!fpath.exists()) {
-//                        fpath.mkdirs();
-//                    }
-//                    mediaPlayer.setDataSource(fpath + "/test.3gp");
-//                    mediaPlayer.prepare();
-//                    mediaPlayer.start();
-//                } catch (IllegalArgumentException e) {
-//                    e.printStackTrace();
-//                } catch (IllegalStateException e) {
-//                    e.printStackTrace();
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
-//                mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener(){
-//                    @Override
-//                    public void onCompletion(MediaPlayer mp) {
-//                        mp.release();
-//                    }
-//                });
-                new Thread(new Runnable() {
-                    public void run() {
-                        try {
-                            track.play();
-                            DataInputStream dis = new DataInputStream(
-                                    new BufferedInputStream(
-                                            new FileInputStream(mAudioFile)));
-                            Log.d("TAG", "dis.available=" + dis.available());
-                            while (track.getPlayState() == AudioTrack.PLAYSTATE_PLAYING
-                                    && dis.available() > 0) {
-                                int i = 0;
-                                while (dis.available() > 0
-                                        && i < mAudioTrackData.length) {
-                                    mAudioTrackData[i] = dis.readShort();
-                                    i++;
-                                }
-                                wipe(mAudioTrackData, 0, mAudioTrackData.length);
-                                track.write(mAudioTrackData, 0,
-                                        mAudioTrackData.length);
-                            }
-                            track.stop();
-                            dis.close();
-                            Log.d("TAG", "dis.close()");
-                        } catch (FileNotFoundException e) {
-                            e.printStackTrace();
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }).start();
+                AudioTrackFunc.getInstance().play(AudioFileFunc.getWavFilePath(getApplicationContext()));
             }
         });
         pauseButton = (Button) findViewById(R.id.pause_button);
         pauseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                track.stop();
-//                if(mediaPlayer != null){
-//                    mediaPlayer.stop();
-//                }
+                AudioTrackFunc.getInstance().stop();
             }
         });
 
@@ -202,68 +143,17 @@ public class ArticleAddActivity extends AppCompatActivity {
         txtSpeechInput.setText(null);
     }
 
-    private void wipe(short[] lin, int off, int len) {
-        int i, j;
-        for (i = 0; i < len; i++) {
-            j = lin[i + off];
-            lin[i + off] = (short) (j >> 2);
-        }
-    }
-
-    private void init() {
-
-        File path = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/");
-        if(!path.exists()) {
-            path.mkdirs();
-        }
-        mAudioFile = new File(path.getAbsolutePath() + "/audiotest.pcm");
-        if (mAudioFile.exists()) {
-            mAudioFile.delete();
-        } else {
-            try {
-                mAudioFile.createNewFile();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        try {
-            int sampleRateInHz = 16000;//44100;
-            int recordBufferSizeInBytes = AudioRecord.getMinBufferSize(
-                    sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT);
-            mAudioRecordData = new short[recordBufferSizeInBytes];
-            mAudioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                    sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, recordBufferSizeInBytes);
-
-            int trackBufferSizeInBytes = AudioRecord.getMinBufferSize(
-                    sampleRateInHz, AudioFormat.CHANNEL_IN_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT);
-            mAudioTrackData = new short[trackBufferSizeInBytes];
-            track = new AudioTrack(AudioManager.STREAM_MUSIC,
-                    sampleRateInHz, AudioFormat.CHANNEL_OUT_MONO,
-                    AudioFormat.ENCODING_PCM_16BIT, trackBufferSizeInBytes,
-                    AudioTrack.MODE_STREAM);
-        } catch (IllegalArgumentException e) {
-            e.printStackTrace();
-        }
-
-    }
-
     private void recordAudioFile() {
         File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
         if (!fpath.exists()) {
             fpath.mkdirs();
         }
         System.out.println("isrecord>>"+isRecording);
-        if(isRecording) {
-            if (mAudioRecord != null
-                    && mAudioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-                mAudioRecord.stop();
-                isRecording = false;
-                fab.setImageDrawable(STOP_DRAWABLE);
-                new Thread(new Runnable() {
+        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(fpath + "test");
+        if(ErrorCode.E_STATE_RECODING == ret) {
+            AudioRecordFunc.getInstance().stopRecordAndFile();
+            fab.setImageDrawable(STOP_DRAWABLE);
+            new Thread(new Runnable() {
                     @Override
                     public void run() {
                         System.out.println("run");
@@ -271,50 +161,9 @@ public class ArticleAddActivity extends AppCompatActivity {
                         System.out.println("run1");
                     }
                 }).start();
-            }
-        } else {
+        } else if(ErrorCode.SUCCESS == ret) {
             fab.setImageDrawable(RECORDING_DRAWABLE);
-            isRecording = true;
-            new Thread(new Runnable() {
-                public void run() {
-                    try {
-                        mAudioRecord.startRecording();
-                        DataOutputStream dos = new DataOutputStream(
-                                new BufferedOutputStream(
-                                        new FileOutputStream(mAudioFile)));
-                        while (mAudioRecord.getRecordingState() == AudioRecord.RECORDSTATE_RECORDING) {
-                            int number = mAudioRecord.read(
-                                    mAudioRecordData, 0,
-                                    mAudioRecordData.length);
-                            for (int i = 0; i < number; i++) {
-                                dos.writeShort(mAudioRecordData[i]);
-                            }
-//                            if (AudioRecord.ERROR_BAD_VALUE != number
-//                                    && AudioRecord.ERROR != number) {
-//                                System.out.println("in");
-//                            }
-                        }
-                        dos.flush();
-                        dos.close();
-                    } catch (FileNotFoundException e) {
-                        e.printStackTrace();
-                        isRecording = false;
-                        fab.setImageDrawable(STOP_DRAWABLE);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                        isRecording = false;
-                        fab.setImageDrawable(STOP_DRAWABLE);
-                    }
-                }
-            }).start();
         }
-//        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(fpath + "test");
-//        if(ErrorCode.E_STATE_RECODING == ret) {
-//            AudioRecordFunc.getInstance().stopRecordAndFile();
-//            fab.setImageDrawable(STOP_DRAWABLE);
-//        } else if(ErrorCode.SUCCESS == ret) {
-//            fab.setImageDrawable(RECORDING_DRAWABLE);
-//        }
     }
 
 
@@ -330,8 +179,9 @@ public class ArticleAddActivity extends AppCompatActivity {
         mIat.setParameter(SpeechConstant.ACCENT, "mandarin");
         mIat.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD);
         mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
-        mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "pcm");
-        mIat.setParameter(SpeechConstant.SAMPLE_RATE, "16000");
+        mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
+//        mIat.setParameter(SpeechConstant.SAMPLE_RATE, "8000");
+//        mIat.setParameter(SpeechConstant.TEXT_ENCODING, "utf-8");
         //只有设置这个属性为1时,VAD_BOS  VAD_EOS才会生效,且RecognizerListener.onVolumeChanged才有音量返回默认：1
         mIat.setParameter(SpeechConstant.VAD_ENABLE,"1");
         // 设置语音前端点:静音超时时间，即用户多长时间不说话则当做超时处理
@@ -372,10 +222,6 @@ public class ArticleAddActivity extends AppCompatActivity {
 
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean b) {
-//                String str = JsonParser.parseIatResult(recognizerResult.getResultString());
-//                Snackbar.make(findViewById(R.id.add_main_clayout),
-//                        str,
-//                        Snackbar.LENGTH_SHORT).show();
                 String resultString = txtSpeechInput.getText().toString();
                 resultString += getResult(recognizerResult);
                 txtSpeechInput.setText(resultString);
@@ -399,7 +245,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (ret != com.iflytek.cloud.ErrorCode.SUCCESS) {
             System.out.println("识别失败,错误码：" + ret);
         } else {
-            byte[] audioData = FucUtil.readAudioFile(this, "/data/audiotest.pcm");
+            byte[] audioData = FucUtil.readAudioFile(this, "/data/audiotest.wav");
             System.out.println("len>>"+audioData.length);
 
             if (null != audioData) {
@@ -408,15 +254,16 @@ public class ArticleAddActivity extends AppCompatActivity {
                 // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
                 // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
                 //voiceBuffer为音频数据流，splitBuffer为自定义分割接口，将其以4.8k字节分割成数组
-                ArrayList<byte[]> buffers = FucUtil.splitBuffer(audioData,audioData.length, 48000);
-                for (int i = 0; i < buffers.size(); i++) {
-                    mIat.writeAudio(buffers.get(i), 0, buffers.get(i).length);
-                    try {
-                        Thread.sleep(100);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
+//                ArrayList<byte[]> buffers = FucUtil.splitBuffer(audioData,audioData.length, 10000);
+//                for (int i = 0; i < buffers.size(); i++) {
+//                    mIat.writeAudio(buffers.get(i), 0, buffers.get(i).length);
+//                    try {
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+                mIat.writeAudio(audioData, 0, audioData.length);
                 mIat.stopListening();
             } else {
                 mIat.cancel();
@@ -447,37 +294,11 @@ public class ArticleAddActivity extends AppCompatActivity {
         return resultBuffer.toString();
     }
 
-    /**
-     * Receiving speech input
-     * */
-    @Override
-    @Deprecated
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        super.onActivityResult(requestCode, resultCode, data);
-
-        switch (requestCode) {
-            case REQ_CODE_SPEECH_INPUT: {
-                if (resultCode == RESULT_OK && null != data) {
-
-                    ArrayList<String> result = data
-                            .getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-                    String resultString = txtSpeechInput.getText().toString();
-                    for(int i=0;i<result.size();i++){
-                        resultString += result.get(i);
-                    }
-                    txtSpeechInput.setText(resultString);
-                }
-                break;
-            }
-
-        }
-    }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         if (requestCode == PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO) {
             if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-//                startRecording();
                 recordAudioFile();
             } else {
                 // Permission Denied
@@ -513,82 +334,5 @@ public class ArticleAddActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.add_menu_item, menu);
         return super.onCreateOptionsMenu(menu);
-    }
-
-    private void recordAudio() {
-        if(MediaRecordFunc.getInstance().isRecording()) {
-            MediaRecordFunc.getInstance().stopRecording();
-            fab.setImageDrawable(STOP_DRAWABLE);
-        } else {
-            File fpath = new File(getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
-            if (!fpath.exists()) {
-                fpath.mkdirs();
-            }
-            try {
-                 MediaRecordFunc.getInstance().startRecording(fpath + "/test.wav");
-            } catch (IOException e) {
-                e.printStackTrace();
-                Snackbar.make(findViewById(R.id.add_main_clayout),
-                        e.getMessage(),
-                        Snackbar.LENGTH_SHORT).show();
-            }
-            fab.setImageDrawable(RECORDING_DRAWABLE);
-        }
-//        if(isRecording) {
-//            stopRecording();
-//        } else {
-//            if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-//                startRecording();
-//            }
-//        }
-    }
-
-    @Deprecated
-    private void startRecording(){
-        mediaRecorder = new MediaRecorder();
-        mediaRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
-        mediaRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
-        File fpath = new File(this.getApplicationContext().getExternalCacheDir().getAbsolutePath() + "/data/audio/");
-        if (!fpath.exists()) {
-            fpath.mkdirs();
-        }
-        mediaRecorder.setOutputFile(fpath + "/test.3gp");
-        mediaRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
-
-        try {
-            mediaRecorder.prepare();
-        } catch (IllegalStateException e) {
-            e.printStackTrace();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        mediaRecorder.start();
-        isRecording = true;
-        System.out.println("done");
-
-    }
-
-    @Deprecated
-    private void stopRecording() {
-        mediaRecorder.stop();
-        mediaRecorder.release();
-        isRecording = false;
-    }
-
-    /**
-     * Showing google speech input dialog
-     * */
-    @Deprecated
-    private void promptSpeechInput() {
-        Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
-        intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
-        intent.putExtra(RecognizerIntent.EXTRA_PROMPT,
-                getString(R.string.speech_prompt));
-        startActivityForResult(intent, REQ_CODE_SPEECH_INPUT);
-        if(PermissionUtil.requestPermission(this, Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-            startRecording();
-        }
     }
 }
