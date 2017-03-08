@@ -16,15 +16,11 @@ public class AudioRecordFunc {
     // 缓冲区字节大小
     private int bufferSizeInBytes = 0;
 
-    //AudioName裸音频数据文件 ，麦克风
-    private String audioName = "";
-
-    //NewAudioName可播放的音频文件
-    private String newAudioName = "";
+    private File rawFile;
+    private File wavFile;
 
     private AudioRecord audioRecord;
     private boolean isRecord = false;// 设置正在录制的状态
-
 
     private static AudioRecordFunc mInstance;
 
@@ -38,13 +34,13 @@ public class AudioRecordFunc {
         return mInstance;
     }
 
-    public int startRecordAndFile(String filePath) {
+    public int startRecordAndFile(File file) {
         //判断是否有外部存储设备sdcard
         if (isRecord) {
             return ErrorCode.E_STATE_RECODING;
         } else {
             if (audioRecord == null)
-                createAudioRecord(filePath);
+                createAudioRecord(file);
 
             audioRecord.startRecording();
             // 让录制状态为true
@@ -60,12 +56,6 @@ public class AudioRecordFunc {
         close();
     }
 
-
-    public long getRecordFileSize() {
-        return AudioFileFunc.getFileSize(newAudioName);
-    }
-
-
     private void close() {
         if (audioRecord != null) {
             System.out.println("stopRecord");
@@ -76,11 +66,10 @@ public class AudioRecordFunc {
         }
     }
 
-
-    private void createAudioRecord(String filePath) {
+    private void createAudioRecord(File file) {
         // 获取音频文件路径
-        audioName = filePath + ".raw";
-        newAudioName = filePath + ".wav";
+        rawFile = new File(file.getAbsolutePath() + "/temp.raw");
+        wavFile = file;
 
         // 获得缓冲区字节大小
         bufferSizeInBytes = AudioRecord.getMinBufferSize(AudioFileFunc.AUDIO_SAMPLE_RATE,
@@ -95,7 +84,7 @@ public class AudioRecordFunc {
         @Override
         public void run() {
             writeDateTOFile();//往文件中写入裸数据
-            copyWaveFile(audioName, newAudioName);//给裸数据加上头文件
+            copyWaveFile(rawFile, wavFile);//给裸数据加上头文件
         }
     }
 
@@ -110,7 +99,7 @@ public class AudioRecordFunc {
         FileOutputStream fos = null;
         int readsize = 0;
         try {
-            File file = new File(audioName);
+            File file = rawFile;
             if (file.exists()) {
                 file.delete();
             } else {
@@ -140,7 +129,7 @@ public class AudioRecordFunc {
     }
 
     // 这里得到可播放的音频文件
-    private void copyWaveFile(String inFilename, String outFilename) {
+    private void copyWaveFile(File inFile, File outFile) {
         FileInputStream in = null;
         FileOutputStream out = null;
         long totalAudioLen = 0;
@@ -150,8 +139,8 @@ public class AudioRecordFunc {
         long byteRate = 16 * AudioFileFunc.AUDIO_SAMPLE_RATE * channels / 8;
         byte[] data = new byte[bufferSizeInBytes];
         try {
-            in = new FileInputStream(inFilename);
-            out = new FileOutputStream(outFilename);
+            in = new FileInputStream(inFile);
+            out = new FileOutputStream(outFile);
             totalAudioLen = in.getChannel().size();
             totalDataLen = totalAudioLen + 36;
             writeWaveFileHeader(out, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);

@@ -127,13 +127,9 @@ public class FucUtil {
 	 * 
 	 * @return 二进制文件数据
 	 */
-	public static byte[] readAudioFile(Context context, String filename) {
+	public static byte[] readAudioFile(File file) {
 		try {
-			File file = new File(context.getExternalCacheDir().getAbsolutePath()+filename);
-			if(!file.exists()) {
-				file.createNewFile();
-			}
-			InputStream ins = new FileInputStream(context.getExternalCacheDir().getAbsolutePath()+filename);
+			InputStream ins = new FileInputStream(file);
 			byte[] data = new byte[ins.available()];
 			
 			ins.read(data);

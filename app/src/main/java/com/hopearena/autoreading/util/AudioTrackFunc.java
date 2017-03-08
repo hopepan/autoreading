@@ -21,6 +21,10 @@ public class AudioTrackFunc {
     private AudioTrack audioTrack = null;
     private short[] mAudioTrackData;
 
+    private AudioTrackFunc() {
+
+    }
+
     public synchronized static AudioTrackFunc getInstance() {
         if (mInstance == null)
             mInstance = new AudioTrackFunc();
@@ -38,7 +42,7 @@ public class AudioTrackFunc {
                 AudioTrack.MODE_STREAM);
     }
 
-    public void play(final String filePath) {
+    public void play(final File file) {
         if(audioTrack == null) {
             initAudioTrack();
         }
@@ -49,7 +53,7 @@ public class AudioTrackFunc {
                     try {
                         DataInputStream dis = new DataInputStream(
                                 new BufferedInputStream(
-                                        new FileInputStream(new File(filePath))));
+                                        new FileInputStream(file)));
                         Log.d("TAG", "dis.available=" + dis.available());
                         while (audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING
                                 && dis.available() > 0) {
