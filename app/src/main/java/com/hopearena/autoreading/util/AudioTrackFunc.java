@@ -46,6 +46,7 @@ public class AudioTrackFunc {
         if(audioTrack == null) {
             initAudioTrack();
         }
+        System.out.println(audioTrack.getPlayState());
         if (audioTrack.getPlayState() == AudioTrack.PLAYSTATE_STOPPED || audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PAUSED) {
             audioTrack.play();
             new Thread(new Runnable() {
@@ -55,6 +56,8 @@ public class AudioTrackFunc {
                                 new BufferedInputStream(
                                         new FileInputStream(file)));
                         Log.d("TAG", "dis.available=" + dis.available());
+                        System.out.println(file.getAbsolutePath());
+                        System.out.println(dis.available());
                         while (audioTrack.getPlayState() == AudioTrack.PLAYSTATE_PLAYING
                                 && dis.available() > 0) {
                             int i = 0;

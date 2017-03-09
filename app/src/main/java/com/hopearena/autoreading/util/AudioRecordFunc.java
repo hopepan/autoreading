@@ -13,6 +13,11 @@ import android.media.MediaRecorder;
 
 
 public class AudioRecordFunc {
+
+    //采用频率
+    //44100是目前的标准，但是某些设备仍然支持22050，16000，11025
+    public final static int AUDIO_SAMPLE_RATE = 8000;  //44.1KHz,普遍使用的频率
+
     // 缓冲区字节大小
     private int bufferSizeInBytes = 0;
 
@@ -58,26 +63,26 @@ public class AudioRecordFunc {
 
     private void close() {
         if (audioRecord != null) {
-            System.out.println("stopRecord");
             isRecord = false;//停止文件写入
             audioRecord.stop();
             audioRecord.release();//释放资源
             audioRecord = null;
+
         }
     }
 
     private void createAudioRecord(File file) {
         // 获取音频文件路径
-        rawFile = new File(file.getAbsolutePath() + "/temp.raw");
+        rawFile = new File(file.getParent() + "/temp.raw");
         wavFile = file;
 
         // 获得缓冲区字节大小
-        bufferSizeInBytes = AudioRecord.getMinBufferSize(AudioFileFunc.AUDIO_SAMPLE_RATE,
+        bufferSizeInBytes = AudioRecord.getMinBufferSize(AUDIO_SAMPLE_RATE,
                 AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
 
 
         // 创建AudioRecord对象（修改处）
-        audioRecord = new AudioRecord(AudioFileFunc.AUDIO_INPUT, AudioFileFunc.AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
     }
 
     class AudioRecordThread implements Runnable {

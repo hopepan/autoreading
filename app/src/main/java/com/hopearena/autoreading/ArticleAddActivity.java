@@ -28,6 +28,7 @@ import com.hopearena.autoreading.util.AudioTrackFunc;
 import com.hopearena.autoreading.util.ErrorCode;
 import com.hopearena.autoreading.util.PermissionUtil;
 import com.hopearena.autoreading.util.RecogniseFunc;
+import com.hopearena.autoreading.util.RecordPlayer;
 
 import java.io.File;
 import java.io.IOException;
@@ -44,6 +45,9 @@ public class ArticleAddActivity extends AppCompatActivity {
     private ArticleService articleService = new ArticleServiceImpl();
 
     private File audioFile;
+
+    private RecogniseFunc recogniseFunc;
+    private RecordPlayer recordPlayer;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,6 +69,9 @@ public class ArticleAddActivity extends AppCompatActivity {
         }
 
         prepareAudioFile();
+
+        recogniseFunc = new RecogniseFunc(getApplicationContext());
+        recordPlayer = new RecordPlayer(getApplicationContext());
 
         txtSpeechInput.setText(null);
 
@@ -91,13 +98,13 @@ public class ArticleAddActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                AudioTrackFunc.getInstance().play(audioFile);
+                recordPlayer.playRecordFile(audioFile);
             }
         });
         pauseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                AudioTrackFunc.getInstance().stop();
+                recordPlayer.stopPalyer();
             }
         });
 
@@ -112,10 +119,12 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (!fpath.exists()) {
             fpath.mkdirs();
         }
+        audioFile = new File(fpath + "audioRecord.wav");
         try {
-            audioFile = File.createTempFile("audioRecord", ".wav", fpath);
+            if(!audioFile.exists()) {
+                audioFile.createNewFile();
+            }
         } catch (IOException e) {
-            // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
@@ -128,7 +137,7 @@ public class ArticleAddActivity extends AppCompatActivity {
             new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        RecogniseFunc.getInstance().recogniseAudio(audioFile, txtSpeechInput);
+                        recogniseFunc.recogniseAudio(audioFile, txtSpeechInput);
                     }
                 }).start();
         } else if(ErrorCode.SUCCESS == ret) {

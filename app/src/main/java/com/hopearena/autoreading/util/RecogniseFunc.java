@@ -23,20 +23,11 @@ import java.util.LinkedHashMap;
 
 public class RecogniseFunc {
 
-    private static RecogniseFunc mInstance;
-
     private SpeechRecognizer mIat;
 
-    private HashMap<String, String> mIatResults = new LinkedHashMap<String, String>();
 
-    private RecogniseFunc() {
-
-    }
-
-    public synchronized static RecogniseFunc getInstance() {
-        if (mInstance == null)
-            mInstance = new RecogniseFunc();
-        return mInstance;
+    public RecogniseFunc(Context context) {
+        initIat(context);
     }
 
     private void initIat(Context context) {
@@ -54,7 +45,7 @@ public class RecogniseFunc {
         mIat.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_CLOUD);
         mIat.setParameter(SpeechConstant.RESULT_TYPE, "json");
         mIat.setParameter(SpeechConstant.AUDIO_FORMAT, "wav");
-//        mIat.setParameter(SpeechConstant.SAMPLE_RATE, "8000");
+//        mIat.setParameter(SpeechConstant.SAMPLE_RATE, ""+AudioRecordFunc.AUDIO_SAMPLE_RATE);
 //        mIat.setParameter(SpeechConstant.TEXT_ENCODING, "utf-8");
         //只有设置这个属性为1时,VAD_BOS  VAD_EOS才会生效,且RecognizerListener.onVolumeChanged才有音量返回默认：1
         mIat.setParameter(SpeechConstant.VAD_ENABLE,"1");
@@ -74,28 +65,17 @@ public class RecogniseFunc {
     }
 
     public void recogniseAudio(File file, final EditText txtSpeechInput) {
-        mIatResults.clear();
-
         int ret = mIat.startListening(new RecognizerListener() {
             @Override
             public void onVolumeChanged(int i, byte[] bytes) {
-
             }
 
             @Override
             public void onBeginOfSpeech() {
-//                Snackbar.make(findViewById(R.id.add_main_clayout),
-//                        "开始识别",
-//                        Snackbar.LENGTH_SHORT).show();
-                System.out.println("开始识别");
             }
 
             @Override
             public void onEndOfSpeech() {
-//                Snackbar.make(findViewById(R.id.add_main_clayout),
-//                        "识别结束",
-//                        Snackbar.LENGTH_SHORT).show();
-                System.out.println("识别结束");
             }
 
             @Override
@@ -103,15 +83,10 @@ public class RecogniseFunc {
                 String resultString = txtSpeechInput.getText().toString();
                 resultString += getResult(recognizerResult);
                 txtSpeechInput.setText(resultString);
-                System.out.println("识别结果"+resultString);
             }
 
             @Override
             public void onError(SpeechError speechError) {
-//                Snackbar.make(findViewById(R.id.add_main_clayout),
-//                        speechError.getErrorDescription() + speechError.toString(),
-//                        Snackbar.LENGTH_SHORT).show();
-                System.out.println("识别出错");
             }
 
             @Override
@@ -120,11 +95,8 @@ public class RecogniseFunc {
             }
         });
 
-        if (ret != com.iflytek.cloud.ErrorCode.SUCCESS) {
-            System.out.println("识别失败,错误码：" + ret);
-        } else {
+        if (ret == com.iflytek.cloud.ErrorCode.SUCCESS) {
             byte[] audioData = FucUtil.readAudioFile(file);
-            System.out.println("len>>"+audioData.length);
 
             if (null != audioData) {
                 // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），位长16bit，单声道的wav或者pcm
@@ -145,30 +117,11 @@ public class RecogniseFunc {
                 mIat.stopListening();
             } else {
                 mIat.cancel();
-                System.out.println("读取音频流失败");
             }
         }
     }
 
     private String getResult(RecognizerResult results) {
-        String text = JsonParser.parseIatResult(results.getResultString());
-
-        String sn = null;
-        // 读取json结果中的sn字段
-        try {
-            JSONObject resultJson = new JSONObject(results.getResultString());
-            sn = resultJson.optString("sn");
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        mIatResults.put(sn, text);
-
-        StringBuffer resultBuffer = new StringBuffer();
-        for (String key : mIatResults.keySet()) {
-            resultBuffer.append(mIatResults.get(key));
-        }
-
-        return resultBuffer.toString();
+        return JsonParser.parseIatResult(results.getResultString());
     }
 }
