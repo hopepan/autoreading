@@ -4,6 +4,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 import android.content.Context;
 import android.media.AudioFormat;
@@ -19,24 +20,23 @@ public class AudioRecordFunc {
     public final static int AUDIO_SAMPLE_RATE = 8000;  //44.1KHz,普遍使用的频率
 
     // 缓冲区字节大小
-    private int bufferSizeInBytes = 0;
+    private static int bufferSizeInBytes = 0;
 
     private File rawFile;
     private File wavFile;
 
-    private AudioRecord audioRecord;
+    private static AudioRecord audioRecord;
     private boolean isRecord = false;// 设置正在录制的状态
 
-    private static AudioRecordFunc mInstance;
+    public AudioRecordFunc() {
+        if(audioRecord == null) {
+            // 获得缓冲区字节大小
+            bufferSizeInBytes = AudioRecord.getMinBufferSize(AUDIO_SAMPLE_RATE,
+                    AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
 
-    private AudioRecordFunc() {
-
-    }
-
-    public synchronized static AudioRecordFunc getInstance() {
-        if (mInstance == null)
-            mInstance = new AudioRecordFunc();
-        return mInstance;
+            // 创建AudioRecord对象（修改处）
+            audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+        }
     }
 
     public int startRecordAndFile(File file) {
@@ -44,8 +44,7 @@ public class AudioRecordFunc {
         if (isRecord) {
             return ErrorCode.E_STATE_RECODING;
         } else {
-            if (audioRecord == null)
-                createAudioRecord(file);
+            createAudioRecord(file);
 
             audioRecord.startRecording();
             // 让录制状态为true
@@ -66,8 +65,7 @@ public class AudioRecordFunc {
             isRecord = false;//停止文件写入
             audioRecord.stop();
             audioRecord.release();//释放资源
-            audioRecord = null;
-
+//            audioRecord = null;
         }
     }
 
@@ -76,13 +74,64 @@ public class AudioRecordFunc {
         rawFile = new File(file.getParent() + "/temp.raw");
         wavFile = file;
 
-        // 获得缓冲区字节大小
-        bufferSizeInBytes = AudioRecord.getMinBufferSize(AUDIO_SAMPLE_RATE,
-                AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-
-
-        // 创建AudioRecord对象（修改处）
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+        try {
+            RandomAccessFile randomFile = new RandomAccessFile(file.getAbsolutePath(), "rw");
+            long fileLength = randomFile.length();
+            if(fileLength == 0) {
+                randomFile.seek(fileLength);
+                int channels = 2;
+                long longSampleRate = AUDIO_SAMPLE_RATE;
+                long byteRate = 16 * AUDIO_SAMPLE_RATE * channels / 8;
+                byte[] header = new byte[44];
+                header[0] = 'R'; // RIFF/WAVE header
+                header[1] = 'I';
+                header[2] = 'F';
+                header[3] = 'F';
+                header[4] = 0;
+                header[5] = 0;
+                header[6] = 0;
+                header[7] = 0;
+                header[8] = 'W';
+                header[9] = 'A';
+                header[10] = 'V';
+                header[11] = 'E';
+                header[12] = 'f'; // 'fmt ' chunk
+                header[13] = 'm';
+                header[14] = 't';
+                header[15] = ' ';
+                header[16] = 16; // 4 bytes: size of 'fmt ' chunk
+                header[17] = 0;
+                header[18] = 0;
+                header[19] = 0;
+                header[20] = 1; // format = 1
+                header[21] = 0;
+                header[22] = (byte) channels;
+                header[23] = 0;
+                header[24] = (byte) (longSampleRate & 0xff);
+                header[25] = (byte) ((longSampleRate >> 8) & 0xff);
+                header[26] = (byte) ((longSampleRate >> 16) & 0xff);
+                header[27] = (byte) ((longSampleRate >> 24) & 0xff);
+                header[28] = (byte) (byteRate & 0xff);
+                header[29] = (byte) ((byteRate >> 8) & 0xff);
+                header[30] = (byte) ((byteRate >> 16) & 0xff);
+                header[31] = (byte) ((byteRate >> 24) & 0xff);
+                header[32] = (byte) (2 * 16 / 8); // block align
+                header[33] = 0;
+                header[34] = 16; // bits per sample
+                header[35] = 0;
+                header[36] = 'd';
+                header[37] = 'a';
+                header[38] = 't';
+                header[39] = 'a';
+                header[40] = 0;
+                header[41] = 0;
+                header[42] = 0;
+                header[43] = 0;
+                randomFile.write(header);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     class AudioRecordThread implements Runnable {
@@ -135,19 +184,30 @@ public class AudioRecordFunc {
 
     // 这里得到可播放的音频文件
     private void copyWaveFile(File inFile, File outFile) {
-        FileInputStream in = null;
-        FileOutputStream out = null;
-        long totalAudioLen = 0;
-        long totalDataLen = totalAudioLen + 36;
-        long longSampleRate = AudioFileFunc.AUDIO_SAMPLE_RATE;
+        FileInputStream in;
+        FileOutputStream out;
+        long totalAudioLen;
+        long totalDataLen;
+        long totalOutLen;
+        long longSampleRate = AUDIO_SAMPLE_RATE;
         int channels = 2;
-        long byteRate = 16 * AudioFileFunc.AUDIO_SAMPLE_RATE * channels / 8;
+        long byteRate = 16 * AUDIO_SAMPLE_RATE * channels / 8;
         byte[] data = new byte[bufferSizeInBytes];
         try {
             in = new FileInputStream(inFile);
-            out = new FileOutputStream(outFile);
-            totalAudioLen = in.getChannel().size();
-            totalDataLen = totalAudioLen + 36;
+            out = new FileOutputStream(outFile, true);
+            totalOutLen = out.getChannel().size();
+            if(totalOutLen == 0) {
+                totalAudioLen = in.getChannel().size();
+                totalDataLen = totalAudioLen + 44;
+            } else {
+                totalAudioLen = in.getChannel().size() + totalOutLen - 44;
+                totalDataLen = totalAudioLen + 44;
+            }
+            System.out.println("in.getChannel().size()>>"+in.getChannel().size());
+            System.out.println("totalOutLen>>"+totalOutLen);
+            System.out.println("totalAudioLen>>"+totalAudioLen);
+            System.out.println("totalDataLen>>"+totalDataLen);
             writeWaveFileHeader(out, totalAudioLen, totalDataLen, longSampleRate, channels, byteRate);
             while (in.read(data) != -1) {
                 out.write(data);

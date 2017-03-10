@@ -46,6 +46,7 @@ public class ArticleAddActivity extends AppCompatActivity {
 
     private File audioFile;
 
+    private AudioRecordFunc audioRecordFunc;
     private RecogniseFunc recogniseFunc;
     private RecordPlayer recordPlayer;
 
@@ -70,6 +71,7 @@ public class ArticleAddActivity extends AppCompatActivity {
 
         prepareAudioFile();
 
+        audioRecordFunc = new AudioRecordFunc();
         recogniseFunc = new RecogniseFunc(getApplicationContext());
         recordPlayer = new RecordPlayer(getApplicationContext());
 
@@ -119,9 +121,11 @@ public class ArticleAddActivity extends AppCompatActivity {
         if (!fpath.exists()) {
             fpath.mkdirs();
         }
-        audioFile = new File(fpath + "audioRecord.wav");
+        audioFile = new File(fpath + "/audioRecord.wav");
         try {
-            if(!audioFile.exists()) {
+            if (audioFile.exists()) {
+                audioFile.delete();
+            } else {
                 audioFile.createNewFile();
             }
         } catch (IOException e) {
@@ -130,9 +134,9 @@ public class ArticleAddActivity extends AppCompatActivity {
     }
 
     private void recordAudioFile() {
-        int ret =  AudioRecordFunc.getInstance().startRecordAndFile(audioFile);
+        int ret =  audioRecordFunc.startRecordAndFile(audioFile);
         if(ErrorCode.E_STATE_RECODING == ret) {
-            AudioRecordFunc.getInstance().stopRecordAndFile();
+            audioRecordFunc.stopRecordAndFile();
             fab.setImageDrawable(STOP_DRAWABLE);
             new Thread(new Runnable() {
                     @Override
