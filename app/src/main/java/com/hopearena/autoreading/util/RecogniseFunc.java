@@ -81,7 +81,9 @@ public class RecogniseFunc {
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean b) {
                 String resultString = txtSpeechInput.getText().toString();
+                System.out.println("result>>"+resultString);
                 resultString += getResult(recognizerResult);
+//                String resultString = getResult(recognizerResult);
                 txtSpeechInput.setText(resultString);
             }
 
@@ -96,6 +98,7 @@ public class RecogniseFunc {
         });
 
         if (ret == com.iflytek.cloud.ErrorCode.SUCCESS) {
+            System.out.println("size>>"+file.length());
             byte[] audioData = FucUtil.readAudioFile(file);
 
             if (null != audioData) {
