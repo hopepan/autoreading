@@ -21,6 +21,7 @@ import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Queue;
 
 public class RecogniseFunc {
 
@@ -83,9 +84,7 @@ public class RecogniseFunc {
             @Override
             public void onResult(RecognizerResult recognizerResult, boolean b) {
                 String resultString = txtSpeechInput.getText().toString();
-                System.out.println("result>>"+resultString);
                 resultString += getResult(recognizerResult);
-//                String resultString = getResult(recognizerResult);
                 txtSpeechInput.setText(resultString);
             }
 
@@ -100,7 +99,6 @@ public class RecogniseFunc {
         });
 
         if (ret == com.iflytek.cloud.ErrorCode.SUCCESS) {
-            System.out.println("size>>"+file.length());
             byte[] audioData = FucUtil.readAudioFile(file);
 
             if (null != audioData) {
@@ -126,7 +124,7 @@ public class RecogniseFunc {
         }
     }
 
-    public void recogniseAudio(List<byte[]> rawBytes, final EditText txtSpeechInput) {
+    public void recogniseAudio(Queue<byte[]> rawBytes, final EditText txtSpeechInput) {
         int ret = mIat.startListening(new RecognizerListener() {
             @Override
             public void onVolumeChanged(int i, byte[] bytes) {
@@ -160,7 +158,6 @@ public class RecogniseFunc {
         });
 
         if (ret == com.iflytek.cloud.ErrorCode.SUCCESS) {
-            System.out.println("size>>"+rawBytes.size());
             if (null != rawBytes && !rawBytes.isEmpty()) {
                 // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），位长16bit，单声道的wav或者pcm
                 // 写入8KHz采样的音频时，必须先调用setParameter(SpeechConstant.SAMPLE_RATE, "8000")设置正确的采样率
@@ -176,12 +173,10 @@ public class RecogniseFunc {
 //                        e.printStackTrace();
 //                    }
 //                }
-                for (int i = 0; i < rawBytes.size(); i++) {
-                    byte[] audioData = rawBytes.get(i);
+                while (rawBytes.peek() != null) {
+                    byte[] audioData = rawBytes.poll();
                     mIat.writeAudio(audioData, 0, audioData.length);
                 }
-                // remove the recognised audio
-
                 mIat.stopListening();
             } else {
                 mIat.cancel();
