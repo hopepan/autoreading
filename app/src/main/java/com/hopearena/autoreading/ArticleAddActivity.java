@@ -141,7 +141,7 @@ public class ArticleAddActivity extends AppCompatActivity {
             new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        recogniseFunc.recogniseAudio(audioFile, txtSpeechInput);
+                        recogniseFunc.recogniseAudio(audioRecordFunc.getAudioRawBytes(), txtSpeechInput);
                     }
                 }).start();
         } else if(ErrorCode.SUCCESS == ret) {

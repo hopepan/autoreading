@@ -20,6 +20,7 @@ import org.json.JSONObject;
 import java.io.File;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 
 public class RecogniseFunc {
 
@@ -72,6 +73,7 @@ public class RecogniseFunc {
 
             @Override
             public void onBeginOfSpeech() {
+                // trigger the UI to block the user input and wait
             }
 
             @Override
@@ -117,6 +119,69 @@ public class RecogniseFunc {
 //                    }
 //                }
                 mIat.writeAudio(audioData, 0, audioData.length);
+                mIat.stopListening();
+            } else {
+                mIat.cancel();
+            }
+        }
+    }
+
+    public void recogniseAudio(List<byte[]> rawBytes, final EditText txtSpeechInput) {
+        int ret = mIat.startListening(new RecognizerListener() {
+            @Override
+            public void onVolumeChanged(int i, byte[] bytes) {
+            }
+
+            @Override
+            public void onBeginOfSpeech() {
+            }
+
+            @Override
+            public void onEndOfSpeech() {
+            }
+
+            @Override
+            public void onResult(RecognizerResult recognizerResult, boolean b) {
+                String resultString = txtSpeechInput.getText().toString();
+                System.out.println("result>>"+resultString);
+                resultString += getResult(recognizerResult);
+//                String resultString = getResult(recognizerResult);
+                txtSpeechInput.setText(resultString);
+            }
+
+            @Override
+            public void onError(SpeechError speechError) {
+            }
+
+            @Override
+            public void onEvent(int i, int i1, int i2, Bundle bundle) {
+
+            }
+        });
+
+        if (ret == com.iflytek.cloud.ErrorCode.SUCCESS) {
+            System.out.println("size>>"+rawBytes.size());
+            if (null != rawBytes && !rawBytes.isEmpty()) {
+                // 一次（也可以分多次）写入音频文件数据，数据格式必须是采样率为8KHz或16KHz（本地识别只支持16K采样率，云端都支持），位长16bit，单声道的wav或者pcm
+                // 写入8KHz采样的音频时，必须先调用setParameter(SpeechConstant.SAMPLE_RATE, "8000")设置正确的采样率
+                // 注：当音频过长，静音部分时长超过VAD_EOS将导致静音后面部分不能识别。
+                // 音频切分方法：FucUtil.splitBuffer(byte[] buffer,int length,int spsize);
+                //voiceBuffer为音频数据流，splitBuffer为自定义分割接口，将其以4.8k字节分割成数组
+//                ArrayList<byte[]> buffers = FucUtil.splitBuffer(audioData,audioData.length, 10000);
+//                for (int i = 0; i < buffers.size(); i++) {
+//                    mIat.writeAudio(buffers.get(i), 0, buffers.get(i).length);
+//                    try {
+//                        Thread.sleep(1000);
+//                    } catch (InterruptedException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+                for (int i = 0; i < rawBytes.size(); i++) {
+                    byte[] audioData = rawBytes.get(i);
+                    mIat.writeAudio(audioData, 0, audioData.length);
+                }
+                // remove the recognised audio
+
                 mIat.stopListening();
             } else {
                 mIat.cancel();

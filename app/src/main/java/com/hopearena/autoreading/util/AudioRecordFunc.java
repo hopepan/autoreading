@@ -5,12 +5,15 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import android.content.Context;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
-
+import android.util.Log;
 
 
 public class AudioRecordFunc {
@@ -29,12 +32,14 @@ public class AudioRecordFunc {
     private static AudioRecord audioRecord;
     private boolean isRecord = false;// 设置正在录制的状态
 
+    private List<byte[]> audioRawBytes;
+
     public AudioRecordFunc() {
-        if(audioRecord == null) {
-            // 获得缓冲区字节大小
-            bufferSizeInBytes = AudioRecord.getMinBufferSize(AUDIO_SAMPLE_RATE,
-                    AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
-        }
+        // 获得缓冲区字节大小
+        bufferSizeInBytes = AudioRecord.getMinBufferSize(AUDIO_SAMPLE_RATE,
+                AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT);
+
+        audioRawBytes = new ArrayList<>();
     }
 
     public int startRecordAndFile(File file) {
@@ -42,7 +47,15 @@ public class AudioRecordFunc {
         if (isRecord) {
             return ErrorCode.E_STATE_RECODING;
         } else {
-            createAudioRecord(file);
+//            createAudioRecord(file);
+            try {
+                fopen(file);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            // 创建AudioRecord对象（修改处）
+            audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
 
             audioRecord.startRecording();
 
@@ -68,82 +81,159 @@ public class AudioRecordFunc {
         }
     }
 
-    private void createAudioRecord(File file) {
-        // 获取音频文件路径
-        rawFile = new File(file.getParent() + "/temp.raw");
 
-        // 创建AudioRecord对象（修改处）
-        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
-
-        if(wavFile == null) {
-            filePath = file.getAbsolutePath();
-            try {
-                wavFile = new RandomAccessFile(file.getAbsolutePath(), "rw");
-                long fileLength = wavFile.length();
-                if(fileLength == 0) {
-                    wavFile.seek(fileLength);
-                    int channels = 2;
-                    long longSampleRate = AUDIO_SAMPLE_RATE;
-                    long byteRate = 16 * AUDIO_SAMPLE_RATE * channels / 8;
-                    byte[] header = new byte[44];
-                    header[0] = 'R'; // RIFF/WAVE header
-                    header[1] = 'I';
-                    header[2] = 'F';
-                    header[3] = 'F';
-                    header[4] = 0;
-                    header[5] = 0;
-                    header[6] = 0;
-                    header[7] = 0;
-                    header[8] = 'W';
-                    header[9] = 'A';
-                    header[10] = 'V';
-                    header[11] = 'E';
-                    header[12] = 'f'; // 'fmt ' chunk
-                    header[13] = 'm';
-                    header[14] = 't';
-                    header[15] = ' ';
-                    header[16] = 16; // 4 bytes: size of 'fmt ' chunk
-                    header[17] = 0;
-                    header[18] = 0;
-                    header[19] = 0;
-                    header[20] = 1; // format = 1
-                    header[21] = 0;
-                    header[22] = (byte) channels;
-                    header[23] = 0;
-                    header[24] = (byte) (longSampleRate & 0xff);
-                    header[25] = (byte) ((longSampleRate >> 8) & 0xff);
-                    header[26] = (byte) ((longSampleRate >> 16) & 0xff);
-                    header[27] = (byte) ((longSampleRate >> 24) & 0xff);
-                    header[28] = (byte) (byteRate & 0xff);
-                    header[29] = (byte) ((byteRate >> 8) & 0xff);
-                    header[30] = (byte) ((byteRate >> 16) & 0xff);
-                    header[31] = (byte) ((byteRate >> 24) & 0xff);
-                    header[32] = (byte) (2 * 16 / 8); // block align
-                    header[33] = 0;
-                    header[34] = 16; // bits per sample
-                    header[35] = 0;
-                    header[36] = 'd';
-                    header[37] = 'a';
-                    header[38] = 't';
-                    header[39] = 'a';
-                    header[40] = 0;
-                    header[41] = 0;
-                    header[42] = 0;
-                    header[43] = 0;
-                    wavFile.write(header);
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-        }
-    }
+//    private void createAudioRecord(File file) {
+//        // 获取音频文件路径
+//        rawFile = new File(file.getParent() + "/temp.raw");
+//
+//        // 创建AudioRecord对象（修改处）
+//        audioRecord = new AudioRecord(MediaRecorder.AudioSource.MIC, AUDIO_SAMPLE_RATE, AudioFormat.CHANNEL_IN_STEREO, AudioFormat.ENCODING_PCM_16BIT, bufferSizeInBytes);
+//
+//        if(wavFile == null) {
+//            filePath = file.getAbsolutePath();
+//            try {
+//                wavFile = new RandomAccessFile(file.getAbsolutePath(), "rw");
+//                long fileLength = wavFile.length();
+//                if(fileLength == 0) {
+//                    wavFile.seek(fileLength);
+//                    int channels = 2;
+//                    long longSampleRate = AUDIO_SAMPLE_RATE;
+//                    long byteRate = 16 * AUDIO_SAMPLE_RATE * channels / 8;
+//                    byte[] header = new byte[44];
+//                    header[0] = 'R'; // RIFF/WAVE header
+//                    header[1] = 'I';
+//                    header[2] = 'F';
+//                    header[3] = 'F';
+//                    header[4] = 0;
+//                    header[5] = 0;
+//                    header[6] = 0;
+//                    header[7] = 0;
+//                    header[8] = 'W';
+//                    header[9] = 'A';
+//                    header[10] = 'V';
+//                    header[11] = 'E';
+//                    header[12] = 'f'; // 'fmt ' chunk
+//                    header[13] = 'm';
+//                    header[14] = 't';
+//                    header[15] = ' ';
+//                    header[16] = 16; // 4 bytes: size of 'fmt ' chunk
+//                    header[17] = 0;
+//                    header[18] = 0;
+//                    header[19] = 0;
+//                    header[20] = 1; // format = 1
+//                    header[21] = 0;
+//                    header[22] = (byte) channels;
+//                    header[23] = 0;
+//                    header[24] = (byte) (longSampleRate & 0xff);
+//                    header[25] = (byte) ((longSampleRate >> 8) & 0xff);
+//                    header[26] = (byte) ((longSampleRate >> 16) & 0xff);
+//                    header[27] = (byte) ((longSampleRate >> 24) & 0xff);
+//                    header[28] = (byte) (byteRate & 0xff);
+//                    header[29] = (byte) ((byteRate >> 8) & 0xff);
+//                    header[30] = (byte) ((byteRate >> 16) & 0xff);
+//                    header[31] = (byte) ((byteRate >> 24) & 0xff);
+//                    header[32] = (byte) (2 * 16 / 8); // block align
+//                    header[33] = 0;
+//                    header[34] = 16; // bits per sample
+//                    header[35] = 0;
+//                    header[36] = 'd';
+//                    header[37] = 'a';
+//                    header[38] = 't';
+//                    header[39] = 'a';
+//                    header[40] = 0;
+//                    header[41] = 0;
+//                    header[42] = 0;
+//                    header[43] = 0;
+//                    wavFile.write(header);
+//                }
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//            }
+//
+//        }
+//    }
 
     class AudioRecordThread implements Runnable {
         @Override
         public void run() {
-            writeDateTOFile();//往文件中写入裸数据
-            copyWaveFile(rawFile, wavFile);//给裸数据加上头文件
+//            writeDateTOFile();//往文件中写入裸数据
+//            copyWaveFile(rawFile, wavFile);//给裸数据加上头文件
+            writeDataToList();
+
+            try {
+                for (int i = 0; i < audioRawBytes.size(); i++) {
+                    byte[] audioData = audioRawBytes.get(i);
+                        fwrite(audioData, 0, audioData.length);
+                }
+                fclose();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void writeDataToList() {
+        // new一个byte数组用来存一些字节数据，大小为缓冲区大小
+        byte[] audiodata = new byte[bufferSizeInBytes];
+        int readsize = 0;
+        while (isRecord) {
+            readsize = audioRecord.read(audiodata, 0, bufferSizeInBytes);
+            if (AudioRecord.ERROR_INVALID_OPERATION != readsize) {
+                byte[] rawBytes = new byte[readsize];
+                System.arraycopy(audiodata, 0, rawBytes, 0, readsize);
+                audioRawBytes.add(rawBytes);
+            }
+        }
+    }
+
+    public List<byte[]> getAudioRawBytes() {
+        return audioRawBytes;
+    }
+
+    private void fopen(File f) throws IOException {
+        System.out.println("wav>>"+wavFile);
+        if(wavFile == null || !wavFile.getChannel().isOpen()) {
+            System.out.println("open");
+            wavFile = new RandomAccessFile(f, "rw");
+        }
+
+        if(wavFile.length() == 0) {
+            // 16K、16bit、单声道
+        /* RIFF header */
+            wavFile.writeBytes("RIFF"); // riff id
+            wavFile.writeInt(0); // riff chunk size *PLACEHOLDER*
+            wavFile.writeBytes("WAVE"); // wave type
+
+        /* fmt chunk */
+            wavFile.writeBytes("fmt "); // fmt id
+            wavFile.writeInt(Integer.reverseBytes(16)); // fmt chunk size
+            wavFile.writeShort(Short.reverseBytes((short) 1)); // format: 1(PCM)
+            wavFile.writeShort(Short.reverseBytes((short) 1)); // channels: 1
+            wavFile.writeInt(Integer.reverseBytes(16000)); // samples per second
+            wavFile.writeInt(Integer.reverseBytes((int) (1 * 16000 * 16 / 8))); // BPSecond
+            wavFile.writeShort(Short.reverseBytes((short) (1 * 16 / 8))); // BPSample
+            wavFile.writeShort(Short.reverseBytes((short) (1 * 16))); // bPSample
+
+        /* data chunk */
+            wavFile.writeBytes("data"); // data id
+            wavFile.writeInt(0); // data chunk size *PLACEHOLDER*
+        }
+    }
+
+    private void fwrite(byte[] data, int offset, int size) throws IOException {
+        wavFile.write(data, offset, size);
+    }
+
+    private void fclose() throws IOException {
+        try {
+            long len = wavFile.length();
+            wavFile.seek(4); // riff chunk size
+            wavFile.writeInt(Integer.reverseBytes((int) (len - 8)));
+
+            wavFile.seek(40); // data chunk size
+            wavFile.writeInt(Integer.reverseBytes((int) (len - 44)));
+        } finally {
+            wavFile.close();
         }
     }
 
