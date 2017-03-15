@@ -122,6 +122,9 @@ public class RippleBackground extends RelativeLayout {
 
     private class RippleView extends View {
 
+        private int x;
+        private int y;
+
         public RippleView(Context context) {
             super(context);
             this.setVisibility(View.INVISIBLE);
@@ -130,14 +133,27 @@ public class RippleBackground extends RelativeLayout {
         @Override
         protected void onDraw(Canvas canvas) {
             int radius=(Math.min(getWidth(),getHeight()))/2;
+            System.out.println("x>>"+x);
+            System.out.println("y>>"+y);
             canvas.drawCircle(radius,radius,radius-rippleStrokeWidth,paint);
+            canvas.drawCircle(getWidth(),getHeight(),radius-rippleStrokeWidth,paint);
+        }
+
+        public void setX(final int x) {
+            this.x = x;
+        }
+
+        public void setY(final int y) {
+            this.y = y;
         }
     }
 
-    public void startRippleAnimation(){
+    public void startRippleAnimation(int x, int y){
         if(!isRippleAnimationRunning()){
             for(RippleView rippleView:rippleViewList){
                 rippleView.setVisibility(VISIBLE);
+                rippleView.setX(x);
+                rippleView.setY(y);
             }
             animatorSet.start();
             animationRunning=true;

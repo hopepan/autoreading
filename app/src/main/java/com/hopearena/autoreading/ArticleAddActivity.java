@@ -29,6 +29,7 @@ import com.hopearena.autoreading.util.ErrorCode;
 import com.hopearena.autoreading.util.PermissionUtil;
 import com.hopearena.autoreading.audio.RecogniseFunc;
 import com.hopearena.autoreading.audio.RecordPlayer;
+import com.hopearena.autoreading.util.RippleBackground;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,6 +43,7 @@ public class ArticleAddActivity extends AppCompatActivity {
     private Button playButton;
     private Button pauseButton;
     private FloatingActionButton fab;
+    RippleBackground rippleBackground;
     private ArticleService articleService = new ArticleServiceImpl();
 
     private File audioFile;
@@ -62,6 +64,7 @@ public class ArticleAddActivity extends AppCompatActivity {
         fab = (FloatingActionButton) findViewById(R.id.fab);
         playButton = (Button) findViewById(R.id.play_button);
         pauseButton = (Button) findViewById(R.id.pause_button);
+        rippleBackground = (RippleBackground)findViewById(R.id.content);
 
         // Show the Up button in the action bar.
         ActionBar actionBar = getSupportActionBar();
@@ -81,26 +84,28 @@ public class ArticleAddActivity extends AppCompatActivity {
         List<ResolveInfo> activities = pm.queryIntentActivities(
                 new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
         if (activities.size() != 0) {
-            fab.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    if(PermissionUtil.requestPermission(ArticleAddActivity.this,
-                            Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-                        recordAudioFile();
-                    }
-                }
-            });
+//            fab.setOnClickListener(new View.OnClickListener() {
+//                @Override
+//                public void onClick(View view) {
+//                    if(PermissionUtil.requestPermission(ArticleAddActivity.this,
+//                            Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+//                        recordAudioFile();
+//                    }
+//                }
+//            });
             fab.setOnTouchListener(new View.OnTouchListener() {
                 @Override
                 public boolean onTouch(View v, MotionEvent event) {
                     switch (event.getAction()) {
                         case MotionEvent.ACTION_DOWN:
+                            int x = (int) event.getX();
+                            int y = (int) event.getY();
+                            rippleBackground.startRippleAnimation(x, y);
                             break;
                         case MotionEvent.ACTION_UP:
-
+                            rippleBackground.stopRippleAnimation();
                             break;
                     }
-                    getCurrentFocus().invalidate();
                     return true;
                 }
             });
@@ -126,7 +131,7 @@ public class ArticleAddActivity extends AppCompatActivity {
                 playButton.setVisibility(View.VISIBLE);
             }
         });
-        playButton.setVisibility(View.INVISIBLE);
+        pauseButton.setVisibility(View.INVISIBLE);
 
         RECORDING_DRAWABLE = new BitmapDrawable(getResources(),
                 BitmapFactory.decodeResource(getResources(), android.R.drawable.presence_video_busy));
