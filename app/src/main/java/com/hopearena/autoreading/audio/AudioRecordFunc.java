@@ -1,4 +1,4 @@
-package com.hopearena.autoreading.util;
+package com.hopearena.autoreading.audio;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -11,6 +11,8 @@ import java.util.Queue;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
+
+import com.hopearena.autoreading.util.ErrorCode;
 
 
 public class AudioRecordFunc {

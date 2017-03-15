@@ -1,4 +1,4 @@
-package com.hopearena.autoreading.util;
+package com.hopearena.autoreading.audio;
 
 import java.io.File;
 
@@ -6,35 +6,33 @@ import android.content.Context;
 import android.media.MediaPlayer;
 import android.media.MediaPlayer.OnCompletionListener;
 import android.net.Uri;
-import android.support.design.widget.Snackbar;
 import android.util.Log;
-import android.widget.Toast;
-
-import com.hopearena.autoreading.R;
 
 /**
  *
  *
- * @author kk   录音播放类
+ *  录音播放类
  *
  */
 
 public class RecordPlayer {
 
+    private static final String LOG_TAG = RecordPlayer.class.getName();
+
     private static MediaPlayer mediaPlayer;
 
-    private Context mcontext;
+    private Context mContext;
 
     public RecordPlayer(Context context) {
-        this.mcontext = context;
+        this.mContext = context;
     }
 
     // 播放录音文件
     public void playRecordFile(File file) {
-        if (file.exists() && file != null) {
+        if (file != null && file.exists()) {
             if (mediaPlayer == null) {
                 Uri uri = Uri.fromFile(file);
-                mediaPlayer = MediaPlayer.create(mcontext, uri);
+                mediaPlayer = MediaPlayer.create(mContext, uri);
             }
             mediaPlayer.start();
 
@@ -54,7 +52,7 @@ public class RecordPlayer {
     public void pausePalyer() {
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
-            Log.e("TAG", "暂停播放");
+            Log.i(LOG_TAG, "暂停播放");
         }
 
     }
@@ -65,7 +63,7 @@ public class RecordPlayer {
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             mediaPlayer.seekTo(0);
-            Log.e("TAG", "停止播放");
+            Log.i(LOG_TAG, "停止播放");
         }
     }
 }

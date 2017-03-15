@@ -17,18 +17,18 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 
 import com.hopearena.autoreading.service.ArticleService;
 import com.hopearena.autoreading.service.impl.ArticleServiceImpl;
-import com.hopearena.autoreading.util.AudioRecordFunc;
-import com.hopearena.autoreading.util.AudioTrackFunc;
+import com.hopearena.autoreading.audio.AudioRecordFunc;
 import com.hopearena.autoreading.util.ErrorCode;
 import com.hopearena.autoreading.util.PermissionUtil;
-import com.hopearena.autoreading.util.RecogniseFunc;
-import com.hopearena.autoreading.util.RecordPlayer;
+import com.hopearena.autoreading.audio.RecogniseFunc;
+import com.hopearena.autoreading.audio.RecordPlayer;
 
 import java.io.File;
 import java.io.IOException;
@@ -90,6 +90,20 @@ public class ArticleAddActivity extends AppCompatActivity {
                     }
                 }
             });
+            fab.setOnTouchListener(new View.OnTouchListener() {
+                @Override
+                public boolean onTouch(View v, MotionEvent event) {
+                    switch (event.getAction()) {
+                        case MotionEvent.ACTION_DOWN:
+                            break;
+                        case MotionEvent.ACTION_UP:
+
+                            break;
+                    }
+                    getCurrentFocus().invalidate();
+                    return true;
+                }
+            });
         } else {
             fab.setEnabled(false);
             Snackbar.make(findViewById(R.id.add_main_clayout),
@@ -101,14 +115,18 @@ public class ArticleAddActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 recordPlayer.playRecordFile(audioFile);
+                playButton.setVisibility(View.VISIBLE);
             }
         });
+
         pauseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
                 recordPlayer.stopPalyer();
+                playButton.setVisibility(View.VISIBLE);
             }
         });
+        playButton.setVisibility(View.INVISIBLE);
 
         RECORDING_DRAWABLE = new BitmapDrawable(getResources(),
                 BitmapFactory.decodeResource(getResources(), android.R.drawable.presence_video_busy));

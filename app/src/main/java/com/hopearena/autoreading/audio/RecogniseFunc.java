@@ -1,4 +1,4 @@
-package com.hopearena.autoreading.util;
+package com.hopearena.autoreading.audio;
 
 
 import android.content.Context;
@@ -7,6 +7,8 @@ import android.support.design.widget.Snackbar;
 import android.widget.EditText;
 
 import com.hopearena.autoreading.R;
+import com.hopearena.autoreading.util.FucUtil;
+import com.hopearena.autoreading.util.JsonParser;
 import com.iflytek.cloud.RecognizerListener;
 import com.iflytek.cloud.RecognizerResult;
 import com.iflytek.cloud.SpeechConstant;
