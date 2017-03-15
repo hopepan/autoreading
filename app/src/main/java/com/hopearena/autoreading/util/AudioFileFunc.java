@@ -5,6 +5,7 @@ import android.os.Environment;
 import java.io.File;
 import android.media.MediaRecorder;
 
+@Deprecated
 public class AudioFileFunc {
     //音频输入-麦克风
     public final static int AUDIO_INPUT = MediaRecorder.AudioSource.MIC;

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 /**
  * 本地AMR录音解码成PCM数据流
  */
+@Deprecated
 public class AudioDecode {
 
     private static final String TAG = "AudioDecode";

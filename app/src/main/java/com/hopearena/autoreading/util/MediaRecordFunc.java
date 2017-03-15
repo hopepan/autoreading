@@ -5,6 +5,7 @@ import android.media.MediaRecorder;
 import java.io.IOException;
 
 
+@Deprecated
 public class MediaRecordFunc {
 
     private static MediaRecordFunc mInstance;
