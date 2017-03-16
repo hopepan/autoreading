@@ -7,8 +7,10 @@ import android.content.Context;
 import android.content.res.TypedArray;
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
 import android.util.AttributeSet;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.animation.AccelerateDecelerateInterpolator;
 import android.widget.RelativeLayout;
@@ -16,6 +18,8 @@ import android.widget.RelativeLayout;
 import com.hopearena.autoreading.R;
 
 import java.util.ArrayList;
+
+import static android.R.attr.button;
 
 /**
  * https://github.com/skyfishjy/android-ripple-background
@@ -43,6 +47,10 @@ public class RippleBackground extends RelativeLayout {
     private LayoutParams rippleParams;
     private ArrayList<RippleView> rippleViewList=new ArrayList<RippleView>();
 
+    private FloatingActionButton fab;
+    private int centerID;
+    private Context mContext;
+
     public RippleBackground(Context context) {
         super(context);
     }
@@ -65,6 +73,7 @@ public class RippleBackground extends RelativeLayout {
             throw new IllegalArgumentException("Attributes should be provided to this view,");
         }
 
+        mContext = context;
         final TypedArray typedArray = context.obtainStyledAttributes(attrs, R.styleable.RippleBackground);
         rippleColor=typedArray.getColor(R.styleable.RippleBackground_rb_color, ContextCompat.getColor(context, R.color.rippelColor));
         rippleStrokeWidth=typedArray.getDimension(R.styleable.RippleBackground_rb_strokeWidth, getResources().getDimension(R.dimen.rippleStrokeWidth));
@@ -73,6 +82,7 @@ public class RippleBackground extends RelativeLayout {
         rippleAmount=typedArray.getInt(R.styleable.RippleBackground_rb_rippleAmount,DEFAULT_RIPPLE_COUNT);
         rippleScale=typedArray.getFloat(R.styleable.RippleBackground_rb_scale,DEFAULT_SCALE);
         rippleType=typedArray.getInt(R.styleable.RippleBackground_rb_type,DEFAULT_FILL_TYPE);
+        centerID=typedArray.getResourceId(R.styleable.RippleBackground_rb_centerId, View.NO_ID);
         typedArray.recycle();
 
         rippleDelay=rippleDurationTime/rippleAmount;
@@ -114,6 +124,7 @@ public class RippleBackground extends RelativeLayout {
             alphaAnimator.setRepeatMode(ObjectAnimator.RESTART);
             alphaAnimator.setStartDelay(i * rippleDelay);
             alphaAnimator.setDuration(rippleDurationTime);
+//            final ObjectAnimator translationY = ObjectAnimator.ofFloat(rippleView, "Y", button.getY(), 0);
             animatorList.add(alphaAnimator);
         }
 
@@ -136,7 +147,6 @@ public class RippleBackground extends RelativeLayout {
             System.out.println("x>>"+x);
             System.out.println("y>>"+y);
             canvas.drawCircle(radius,radius,radius-rippleStrokeWidth,paint);
-            canvas.drawCircle(getWidth(),getHeight(),radius-rippleStrokeWidth,paint);
         }
 
         public void setX(final int x) {
@@ -150,6 +160,12 @@ public class RippleBackground extends RelativeLayout {
 
     public void startRippleAnimation(int x, int y){
         if(!isRippleAnimationRunning()){
+            System.out.println("resId>>"+centerID);
+            fab = (FloatingActionButton) LayoutInflater.from(mContext.getApplicationContext()).inflate(R.layout.activity_article_add, null).findViewById(centerID);
+            System.out.println("x>>"+fab.getScaleX());
+            System.out.println("y>>"+fab.getScaleY());
+            System.out.println("w>>"+fab.getWidth());
+            System.out.println("h>>"+fab.getHeight());
             for(RippleView rippleView:rippleViewList){
                 rippleView.setVisibility(VISIBLE);
                 rippleView.setX(x);

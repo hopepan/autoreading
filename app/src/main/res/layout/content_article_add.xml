@@ -22,7 +22,7 @@
         android:hint="@string/add_content"
         android:layout_above="@+id/play_button"
         android:background="@drawable/add_content_textview_border"
-        android:padding="3dp"/>
+        android:padding="3dp" />
 
     <Button
         android:text="@string/play_button"
