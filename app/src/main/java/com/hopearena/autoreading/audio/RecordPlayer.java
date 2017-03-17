@@ -28,42 +28,47 @@ public class RecordPlayer {
     }
 
     // 播放录音文件
-    public void playRecordFile(File file) {
-        if (file != null && file.exists()) {
+    public boolean playRecordFile(File file, final OnCompletionListener listener) {
+        boolean rtn = false;
+        System.out.println("len>>"+file.length());
+        if (file != null && file.length()>0) {
             if (mediaPlayer == null) {
                 Uri uri = Uri.fromFile(file);
                 mediaPlayer = MediaPlayer.create(mContext, uri);
+                //监听MediaPlayer播放完成
+                mediaPlayer.setOnCompletionListener(listener);
             }
-            mediaPlayer.start();
-
-            //监听MediaPlayer播放完成
-            mediaPlayer.setOnCompletionListener(new OnCompletionListener() {
-
-                @Override
-                public void onCompletion(MediaPlayer paramMediaPlayer) {
-                    // TODO Auto-generated method stub
-                }
-            });
-
+            if(!mediaPlayer.isPlaying()) {
+                mediaPlayer.start();
+                rtn = true;
+            }
         }
+        return rtn;
     }
 
     // 暂停播放录音
-    public void pausePalyer() {
-        if (mediaPlayer.isPlaying()) {
+    public boolean pausePlayer() {
+        if(mediaPlayer == null) {
+            return false;
+        }
+        if (mediaPlayer != null && mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             Log.i(LOG_TAG, "暂停播放");
         }
-
+        return true;
     }
 
     // 停止播放录音
-    public void stopPalyer() {
+    public boolean stopPlayer() {
+        if(mediaPlayer == null) {
+            return false;
+        }
         // 这里不调用stop()，调用seekto(0),把播放进度还原到最开始
         if (mediaPlayer.isPlaying()) {
             mediaPlayer.pause();
             mediaPlayer.seekTo(0);
             Log.i(LOG_TAG, "停止播放");
         }
+        return true;
     }
 }

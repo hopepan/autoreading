@@ -38,4 +38,5 @@
     <string name="error_state_record">正在录音中，请先停止录音</string>
     <string name="error_unknown">无法识别的错误</string>
     <string name="play_done">Play done!</string>
+    <string name="play_error">The media can\'t be ready yet!</string>
 </resources>

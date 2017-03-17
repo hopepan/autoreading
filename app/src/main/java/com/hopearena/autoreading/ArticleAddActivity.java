@@ -7,6 +7,7 @@ import android.content.pm.ResolveInfo;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
+import android.media.MediaPlayer;
 import android.os.Bundle;
 import android.speech.RecognizerIntent;
 import android.support.design.widget.FloatingActionButton;
@@ -17,7 +18,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -84,31 +84,39 @@ public class ArticleAddActivity extends AppCompatActivity {
         List<ResolveInfo> activities = pm.queryIntentActivities(
                 new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH), 0);
         if (activities.size() != 0) {
-//            fab.setOnClickListener(new View.OnClickListener() {
-//                @Override
-//                public void onClick(View view) {
-//                    if(PermissionUtil.requestPermission(ArticleAddActivity.this,
-//                            Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
-//                        recordAudioFile();
-//                    }
-//                }
-//            });
-            fab.setOnTouchListener(new View.OnTouchListener() {
+            fab.setOnClickListener(new View.OnClickListener() {
                 @Override
-                public boolean onTouch(View v, MotionEvent event) {
-                    switch (event.getAction()) {
-                        case MotionEvent.ACTION_DOWN:
-                            int x = (int) event.getX();
-                            int y = (int) event.getY();
-                            rippleBackground.startRippleAnimation(x, y);
-                            break;
-                        case MotionEvent.ACTION_UP:
-                            rippleBackground.stopRippleAnimation();
-                            break;
+                public void onClick(View view) {
+                    if(PermissionUtil.requestPermission(ArticleAddActivity.this,
+                            Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+                        recordAudioFile();
                     }
-                    return true;
                 }
             });
+//            fab.setOnTouchListener(new View.OnTouchListener() {
+//                @Override
+//                public boolean onTouch(View v, MotionEvent event) {
+//                    switch (event.getAction()) {
+//                        case MotionEvent.ACTION_DOWN:
+//                            int x = (int) event.getRawX();
+//                            int y = (int) event.getRawY();
+//                            rippleBackground.startRippleAnimation(x, y);
+//                            if(PermissionUtil.requestPermission(ArticleAddActivity.this,
+//                                    Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+//                                recordAudioFile();
+//                            }
+//                            break;
+//                        case MotionEvent.ACTION_UP:
+//                            if(PermissionUtil.requestPermission(ArticleAddActivity.this,
+//                                    Manifest.permission.RECORD_AUDIO, PermissionUtil.PERMISSION_REQUEST_CODE_RECORD_AUDIO)) {
+//                                recordAudioFile();
+//                            }
+//                            rippleBackground.stopRippleAnimation();
+//                            break;
+//                    }
+//                    return true;
+//                }
+//            });
         } else {
             fab.setEnabled(false);
             Snackbar.make(findViewById(R.id.add_main_clayout),
@@ -119,16 +127,28 @@ public class ArticleAddActivity extends AppCompatActivity {
         playButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                recordPlayer.playRecordFile(audioFile);
-                playButton.setVisibility(View.VISIBLE);
+                if(recordPlayer.playRecordFile(audioFile, new OnCompletionListenerImpl())) {
+                    playButton.setVisibility(View.INVISIBLE);
+                    pauseButton.setVisibility(View.VISIBLE);
+                } else {
+                    Snackbar.make(findViewById(R.id.add_main_clayout),
+                            getString(R.string.play_error),
+                            Snackbar.LENGTH_SHORT).show();
+                }
             }
         });
 
         pauseButton.setOnClickListener(new View.OnClickListener(){
             @Override
             public void onClick(View v) {
-                recordPlayer.stopPalyer();
-                playButton.setVisibility(View.VISIBLE);
+                if(recordPlayer.stopPlayer()) {
+                    pauseButton.setVisibility(View.INVISIBLE);
+                    playButton.setVisibility(View.VISIBLE);
+                } else {
+                    Snackbar.make(findViewById(R.id.add_main_clayout),
+                            getString(R.string.play_error),
+                            Snackbar.LENGTH_SHORT).show();
+                }
             }
         });
         pauseButton.setVisibility(View.INVISIBLE);
@@ -211,5 +231,14 @@ public class ArticleAddActivity extends AppCompatActivity {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.add_menu_item, menu);
         return super.onCreateOptionsMenu(menu);
+    }
+
+    private class OnCompletionListenerImpl implements MediaPlayer.OnCompletionListener {
+
+        @Override
+        public void onCompletion(MediaPlayer mp) {
+            pauseButton.setVisibility(View.INVISIBLE);
+            playButton.setVisibility(View.VISIBLE);
+        }
     }
 }

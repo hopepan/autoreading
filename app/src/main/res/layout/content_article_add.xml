@@ -29,7 +29,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:id="@+id/play_button"
-        android:layout_above="@+id/pause_button"
+        android:layout_alignParentBottom="true"
         />
 
     <Button
